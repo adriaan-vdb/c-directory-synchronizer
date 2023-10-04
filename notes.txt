@@ -1,0 +1,22 @@
+GENERAL PROJECT NOTES (Josh):
+- Files are identical if they have the same file-name and contents, in the same relative location (relative to the top-level directory)
+
+SUGGESTED SYSTEM CALLS (and what they do!):
+- perror: prints an error message to stderr (error output stream)
+- getopt: gets the flags placed in the command call
+- malloc: allocates memory to a pointer
+- realloc: resizes memory pointed to (by a pointer)
+- strdup: duplicates a string
+- free: deallocates memory pointed to (by a pointer)
+- opendir: opens a directory (given directory name)
+- readdir: reads the directory that is opened
+- closedir: closes the opened directory
+- stat: provides information about a file
+- mkdir: creates a new directory with a given name
+- open: opens a new file
+- read: reeads a file
+- write: writes to a file
+- close: closes the file
+- chmod: changes the mode/permissions of a file
+- utime: changes the access/modification times of a file
+- glob2regex(provided), regcomp and regexec
