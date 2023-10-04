@@ -22,6 +22,8 @@ int main(int argc, char *argv[])
             // do something
             break;
         case 'n':
+            // do something (also do -v)
+        case 'v':
             // do something
             break;
         case 'o':
@@ -31,9 +33,6 @@ int main(int argc, char *argv[])
             // do something
             break;
         case 'r':
-            // do something
-            break;
-        case 'v':
             // do something
             break;
         default:
