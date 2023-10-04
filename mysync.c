@@ -1,22 +1,71 @@
 #include "mysync.h"
 
+#define	CHECK_ALLOC(p) if(p == NULL) { perror(__func__); exit(EXIT_FAILURE); }
+
 void usage(){
     printf("USAGE\n");
 }
 
+void processDirectory(const char *dirname, char *tag) {
+    DIR *dir;
+    struct dirent *entry;
 
-void openDir(){
+    // ------- If we wanted to get the full directory path:
+    char cwd[MAXPATHLEN]; 
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        perror("Unable to get current working directory");
+        exit(EXIT_FAILURE);
+    }
+    char fullpath[MAXPATHLEN]; 
+    snprintf(fullpath, sizeof(fullpath), "%s/%s", cwd, dirname);
 
-    // check directories exist
+    printf("Directory Path: %s\n", fullpath);
+    // --------
 
-    // open and read each directory, locating all regular files in the directory. 
-    // (At this stage, limit your project to support just two directories, and to just print each filename as it is found)
-    
+    dir = opendir(dirname);
+    if (dir == NULL) {
+        perror("Unable to open directory");
+        exit(EXIT_FAILURE);
+    }
+    printf("Directory Name: %s\n", (char *)dirname);
 
-    // Obtain list of files to be updated
-    // recurse through file system (onky for -r)
-    // Else: only consider top level directories.
+    while ((entry = readdir(dir)) != NULL) {
+        struct stat fileStat;
+        char pathname[MAXPATHLEN]; // max path length (should dynamically allocate)
+
+        sprintf(pathname, "%s/%s", dirname, entry->d_name);
+
+        // Ignore "." and ".."
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+
+        // Check if the entry is a directory (DT_DIR is defined on some systems)
+        if (entry->d_type == DT_DIR) {
+            printf("Sub Directory: %s\n", pathname); // sub directory found
+        }
+
+        if (stat(pathname, &fileStat) == -1) {
+            perror("Error calling stat");
+            continue; 
+        }
+
+        files = realloc(files, (nfiles+1)*sizeof(files[0]));
+	    CHECK_ALLOC(files);		
+
+        files[nfiles].pathname  = strdup(pathname);
+        CHECK_ALLOC(files[nfiles].pathname);	
+
+        //  REMEMBER THIS ELEMENT'S MODIFICATION TIME
+        files[nfiles].mtime = fileStat.st_mtime;
+        ++nfiles;
+
+        printf("File: %s\n", pathname);
+    }
+
+closedir(dir);
 }
+
+
 
 
 
@@ -34,6 +83,7 @@ int main(int argc, char *argv[])
     // Check and evalute command line options
 
     int opt;
+    char *tag;
     while ((opt = getopt(argc, argv, OPTLIST)) != -1)
     {
         switch (opt)
@@ -62,6 +112,12 @@ int main(int argc, char *argv[])
             perror("Invalid option provided");
         }
     }
+
+
+    for (int i = 1; i < argc; i++) {
+        processDirectory(argv[i], *tag);
+    }
+
 
     // Check and evaluate given directories
 
