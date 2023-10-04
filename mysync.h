@@ -23,7 +23,3 @@ struct {
      struct LIST *i_patterns;
      struct LIST *o_patterns;
 } options;
-
-struct {
-    
-}
