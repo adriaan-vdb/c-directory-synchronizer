@@ -1,5 +1,26 @@
 #include "mysync.h"
 
+void usage(){
+    printf("USAGE\n");
+}
+
+
+void openDir(){
+
+    // check directories exist
+
+    // open and read each directory, locating all regular files in the directory. 
+    // (At this stage, limit your project to support just two directories, and to just print each filename as it is found)
+    
+
+    // Obtain list of files to be updated
+    // recurse through file system (onky for -r)
+    // Else: only consider top level directories.
+}
+
+
+
+
 int main(int argc, char *argv[])
 {
     if (argc < 3) // If less than 2 directories are named
@@ -7,6 +28,8 @@ int main(int argc, char *argv[])
         perror("Less than 2 directories are named.");
         exit(EXIT_FAILURE);
     }
+
+    usage();
 
     // Check and evalute command line options
 
@@ -45,3 +68,4 @@ int main(int argc, char *argv[])
 
     exit(EXIT_SUCCESS);
 }
+

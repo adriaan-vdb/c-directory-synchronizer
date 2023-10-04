@@ -20,3 +20,7 @@ SUGGESTED SYSTEM CALLS (and what they do!):
 - chmod: changes the mode/permissions of a file
 - utime: changes the access/modification times of a file
 - glob2regex(provided), regcomp and regexec
+
+
+TODO:
+1. 
