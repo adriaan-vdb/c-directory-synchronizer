@@ -11,6 +11,7 @@
 #include  <time.h>
 
 #define OPTLIST "ai:no:prv"
+#define	CHECK_ALLOC(p) if(p == NULL) { perror(__func__); exit(EXIT_FAILURE); }
 
 typedef struct _list {
      char           *string;

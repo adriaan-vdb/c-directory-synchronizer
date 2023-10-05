@@ -1,7 +1,5 @@
 #include "mysync.h"
 
-#define	CHECK_ALLOC(p) if(p == NULL) { perror(__func__); exit(EXIT_FAILURE); }
-
 void usage(){
     printf("USAGE\n");
 }
