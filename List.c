@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-
 #include "mysync.h"
 
 //  'CREATE' A NEW, EMPTY LIST - JUST A NULL POINTER

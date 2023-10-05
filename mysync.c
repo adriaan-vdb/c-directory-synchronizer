@@ -1,7 +1,7 @@
 #include "mysync.h"
 
 void usage(){
-    printf("USAGE\n");
+    printf("- USAGE\n");
 }
 
 void processDirectory(const char *dirname, OPTIONS *flags) {
@@ -31,7 +31,7 @@ void processDirectory(const char *dirname, OPTIONS *flags) {
         struct stat fileStat;
         char pathname[MAXPATHLEN]; // max path length (should dynamically allocate)
 
-        sprintf(pathname, "%s/%s", dirname, entry->d_name);
+        //sprintf(pathname, "%s/%s", dirname, entry->d_name);
 
         // Ignore "." and ".." when -a flag present
         if (flags->a) {
@@ -44,10 +44,10 @@ void processDirectory(const char *dirname, OPTIONS *flags) {
             printf("Sub Directory: %s\n", pathname); // sub directory found
         }
 
-        if (stat(pathname, &fileStat) == -1) {
-            perror("Error calling stat");
-            continue; 
-        }
+        // if (stat(pathname, &fileStat) == -1) {
+        //     perror("Error calling stat");
+        //     continue; 
+        // }
 
         files = realloc(files, (nfiles+1)*sizeof(files[0]));
 	    CHECK_ALLOC(files);		
@@ -59,7 +59,7 @@ void processDirectory(const char *dirname, OPTIONS *flags) {
         files[nfiles].mtime = fileStat.st_mtime;
         ++nfiles;
 
-        printf("File: %s\n", pathname);
+        printf("- File: %s\n", pathname);
     }
 
 closedir(dir);
@@ -121,8 +121,7 @@ int main(int argc, char *argv[])
         }
     }
 
-
-    for (int i = 1; i < argc; i++) {
+    for (int i = optind; i < argc; i++) {
         processDirectory(argv[i], &flags);
     }
 

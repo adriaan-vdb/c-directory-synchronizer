@@ -30,15 +30,15 @@ typedef struct {
     LIST *o_patterns;
 } OPTIONS;
 
-OPTIONS flags;
+static OPTIONS flags;
 
 typedef struct {
     char        *pathname;
     time_t      mtime;
 } FILES;
 
-FILES           *files  = NULL;
-int             nfiles  = 0;
+static FILES           *files  = NULL;
+static int             nfiles  = 0;
 
 struct NOTE_dirent {
     ino_t d_ino;           // Inode number
