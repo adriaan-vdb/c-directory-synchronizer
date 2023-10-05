@@ -1,16 +1,15 @@
 #include "mysync.h"
 
-#define	CHECK_ALLOC(p) if(p == NULL) { perror(__func__); exit(EXIT_FAILURE); }
-
 void usage(){
     printf("USAGE\n");
 }
 
+// NOTE: tag parameter refers to whether a was passed as a flag or not
 void processDirectory(const char *dirname, char *tag) {
     DIR *dir;
     struct dirent *entry;
 
-    // ------- If we wanted to get the full directory path:
+    // ------- If we wanted to get the absolute directory path:
     char cwd[MAXPATHLEN]; 
     if (getcwd(cwd, sizeof(cwd)) == NULL) {
         perror("Unable to get current working directory");
