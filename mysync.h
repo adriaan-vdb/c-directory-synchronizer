@@ -17,7 +17,7 @@ typedef struct _list {
      struct _list   *next;
 } LIST;
 
-struct {
+typedef struct {
      bool  a;
      bool  i;
      bool  n;
@@ -25,9 +25,11 @@ struct {
      bool  p;
      bool  r;
      bool  v;
-     struct LIST *i_patterns;
-     struct LIST *o_patterns;
-} options;
+    LIST *i_patterns;
+    LIST *o_patterns;
+} OPTIONS;
+
+OPTIONS flags;
 
 typedef struct {
     char        *pathname;
@@ -44,3 +46,15 @@ struct NOTE_dirent {
     unsigned char d_type;  // Type of file (e.g., DT_REG for regular file, DT_DIR for directory)
     char d_name[];         // Null-terminated filename
 };
+
+//  'CREATE' A NEW, EMPTY LIST
+extern	LIST	*list_new(void);
+
+//  ADD A NEW (STRING) ITEM TO AN EXISTING LIST
+extern	LIST	*list_add(  LIST *list, char *newstring);
+
+//  DETERMINE IF A REQUIRED ITEM (A STRING) IS STORED IN A GIVEN LIST
+extern	bool	 list_find (LIST *list, char *wanted);
+
+//  PRINT EACH ITEM (A STRING) IN A GIVEN LIST TO stdout
+extern	void	 list_print(LIST *list);

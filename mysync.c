@@ -6,7 +6,7 @@ void usage(){
     printf("USAGE\n");
 }
 
-void processDirectory(const char *dirname, char *tag) {
+void processDirectory(const char *dirname, OPTIONS *flags) {
     DIR *dir;
     struct dirent *entry;
 
@@ -35,9 +35,11 @@ void processDirectory(const char *dirname, char *tag) {
 
         sprintf(pathname, "%s/%s", dirname, entry->d_name);
 
-        // Ignore "." and ".."
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
-            continue;
+        // Ignore "." and ".." when -a flag present
+        if (flags->a) {
+            if (entry->d_name[0] == '.')
+                continue;
+        }
 
         // Check if the entry is a directory (DT_DIR is defined on some systems)
         if (entry->d_type == DT_DIR) {
@@ -83,30 +85,38 @@ int main(int argc, char *argv[])
     // Check and evalute command line options
 
     int opt;
-    char *tag;
+
+    // Initialise -i and -o lists
+    flags.i_patterns = list_new();
+    flags.o_patterns = list_new();
+
     while ((opt = getopt(argc, argv, OPTLIST)) != -1)
     {
         switch (opt)
         {
         case 'a':
-            // do something
+            flags.a = true;
             break;
         case 'i':
-            // do something
+            flags.i = true;
+            list_add(flags.i_patterns, optarg);
+            // need to evaluate given pattern/s
             break;
         case 'n':
-            // do something (also do -v)
+            flags.n = true;
         case 'v':
-            // do something
+            flags.v = true;
             break;
         case 'o':
-            // do something
+            flags.o = true;
+            list_add(flags.o_patterns, optarg);
+            // need to evaluate given pattern/s
             break;
         case 'p':
-            // do something
+            flags.p = true;
             break;
         case 'r':
-            // do something
+            flags.r = true;
             break;
         default:
             perror("Invalid option provided");
@@ -115,7 +125,7 @@ int main(int argc, char *argv[])
 
 
     for (int i = 1; i < argc; i++) {
-        processDirectory(argv[i], *tag);
+        processDirectory(argv[i], &flags);
     }
 
 
