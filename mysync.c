@@ -9,16 +9,16 @@ void processDirectory(const char *dirname, char *tag) {
     DIR *dir;
     struct dirent *entry;
 
-    // ------- If we wanted to get the absolute directory path:
-    char cwd[MAXPATHLEN]; 
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        perror("Unable to get current working directory");
-        exit(EXIT_FAILURE);
-    }
-    char fullpath[MAXPATHLEN]; 
-    snprintf(fullpath, sizeof(fullpath), "%s/%s", cwd, dirname);
+    // ------- If we wanted to get the full directory path:
+    // char cwd[MAXPATHLEN]; 
+    // if (getcwd(cwd, sizeof(cwd)) == NULL) {
+    //     perror("Unable to get current working directory");
+    //     exit(EXIT_FAILURE);
+    // }
+    // char fullpath[MAXPATHLEN]; 
+    // sprintf(fullpath, "%s/%s", cwd, dirname);
 
-    printf("Directory Path: %s\n", fullpath);
+    // printf("Directory Path: %s\n", fullpath);
     // --------
 
     dir = opendir(dirname);
