@@ -1,74 +1,66 @@
 #include "mysync.h"
 
-void usage(){
-    printf("- USAGE\n");
+void usage()
+{
+    // printf("- USAGE\n");
 }
 
-void processDirectory(const char *dirname, OPTIONS *flags) {
+void processDirectory(const char *dirname, OPTIONS *flags)
+{
     DIR *dir;
     struct dirent *entry;
 
     // ------- If we wanted to get the full directory path:
-    // char cwd[MAXPATHLEN]; 
+    // char cwd[MAXPATHLEN];
     // if (getcwd(cwd, sizeof(cwd)) == NULL) {
     //     perror("Unable to get current working directory");
     //     exit(EXIT_FAILURE);
     // }
-    // char fullpath[MAXPATHLEN]; 
+    // char fullpath[MAXPATHLEN];
     // sprintf(fullpath, "%s/%s", cwd, dirname);
 
     // printf("Directory Path: %s\n", fullpath);
     // --------
 
     dir = opendir(dirname);
-    if (dir == NULL) {
+    if (dir == NULL)
+    {
         perror("Unable to open directory");
         exit(EXIT_FAILURE);
     }
     printf("Directory Name: %s\n", (char *)dirname);
 
-    while ((entry = readdir(dir)) != NULL) {
+    while ((entry = readdir(dir)) != NULL)
+    {
         struct stat fileStat;
-        char pathname[MAXPATHLEN]; // max path length (should dynamically allocate)
 
-        //sprintf(pathname, "%s/%s", dirname, entry->d_name);
-
-        // Ignore "." and ".." when -a flag present
-        if (flags->a) {
-            if (entry->d_name[0] == '.')
-                continue;
+        // Check if -a flag present
+        if (!flags->a && entry->d_name[0] == '.')
+        {
+            continue;
         }
 
-        // Check if the entry is a directory (DT_DIR is defined on some systems)
-        if (entry->d_type == DT_DIR) {
-            printf("Sub Directory: %s\n", pathname); // sub directory found
+        // Check if current entry is a file or directory (note that d_type doesn't work on windows)
+        struct stat teststat;
+        char path[1024];
+        sprintf(path, "%s/%s", dirname, entry->d_name);
+        stat(path, &teststat);
+
+        if (S_ISDIR(teststat.st_mode)) // Current item is sub-directory
+        {
+            printf("SDIR: %s\n", entry->d_name);
         }
-
-        // if (stat(pathname, &fileStat) == -1) {
-        //     perror("Error calling stat");
-        //     continue; 
-        // }
-
-        files = realloc(files, (nfiles+1)*sizeof(files[0]));
-	    CHECK_ALLOC(files);		
-
-        files[nfiles].pathname  = strdup(pathname);
-        CHECK_ALLOC(files[nfiles].pathname);	
-
-        //  REMEMBER THIS ELEMENT'S MODIFICATION TIME
-        files[nfiles].mtime = fileStat.st_mtime;
-        ++nfiles;
-
-        printf("- File: %s\n", pathname);
+        else // Current item is a file
+        {
+            FILES newfile;
+            newfile = (FILES){.pathname = path, .name = entry->d_name, .mtime = fileStat.st_mtime};
+            printf("FILE: %s\n", newfile.name);
+            hashtable_add(files, newfile);
+        }
     }
 
-closedir(dir);
+    closedir(dir);
 }
-
-
-
-
-
 
 int main(int argc, char *argv[])
 {
@@ -121,13 +113,14 @@ int main(int argc, char *argv[])
         }
     }
 
-    for (int i = optind; i < argc; i++) {
+    files = hashtable_new();
+
+    for (int i = optind; i < argc; i++)
+    {
         processDirectory(argv[i], &flags);
     }
-
 
     // Check and evaluate given directories
 
     exit(EXIT_SUCCESS);
 }
-
