@@ -4,7 +4,7 @@ OPTIONS flags;
 HASHTABLE *files;
 int ndirectories = 0;
 char **directories;
-FILELIST *sync;
+FILELIST *sync_files;
 
 void usage()
 {
@@ -74,7 +74,7 @@ void processDirectory(const char *dirname, OPTIONS *flags)
             printf("FILE: %s\n", newfile.name);
             hashtable_add(files, newfile);
         }
-        free(path);
+        // free(path); // check this out
     }
 
     closedir(dir);
@@ -82,7 +82,7 @@ void processDirectory(const char *dirname, OPTIONS *flags)
 
 void analyse_files()
 {
-    sync = calloc(ndirectories, sizeof(FILELIST *)); // creates array with a linked list of files for each directory
+    sync_files = calloc(ndirectories, sizeof(FILELIST *)); // creates array with a linked list of files for each directory
     for (int i = 0; i < HASHTABLE_SIZE; i++)
     {
         // For each "row" in the hashtable, view the row and account for any hashtable encoding collisions
@@ -113,8 +113,8 @@ void analyse_files()
                             continue; // Doesn't add anything instruction to directory containing the up to date file
 
                         // Adds file to other directories to be synced in
-                        FILELIST temp = sync[j];
-                        sync[j] = (FILELIST){.file = analysis[0].file, .new = true, .next = &temp};
+                        FILELIST temp = sync_files[j];
+                        sync_files[j] = (FILELIST){.file = analysis[0].file, .new = true, .next = &temp};
                     }
                 }
                 // 2. More than 1 entry i.e. find most up to date version and copy to every other directory
@@ -133,7 +133,7 @@ void analyse_files()
                     {
                         if (sync_index(analysis[latest_index].file) == j)
                             continue; // Doesn't add anything instruction to directory containing the up to date file
-                        FILELIST temp = sync[j];
+                        FILELIST temp = sync_files[j];
                         // Check if the directory is having if a previous version of the file exists in the current directory
                         bool new = true;
                         for (int x = 0; x < analysis_index; x++)
@@ -143,7 +143,7 @@ void analyse_files()
                                 new = false;
                             }
                         }
-                        sync[j] = (FILELIST){.file = analysis[latest_index].file, .new = new, .next = &temp};
+                        sync_files[j] = (FILELIST){.file = analysis[latest_index].file, .new = new, .next = &temp};
                     }
                 }
                 else

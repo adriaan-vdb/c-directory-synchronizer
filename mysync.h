@@ -58,7 +58,7 @@ typedef struct _hashlist
     bool new; // True if the file needs to be added to the directory (rather than modified); not in use for hashtable data structure
 } FILELIST;
 
-extern FILELIST *sync; // Used to keep track of the files that need to be synced in each directory
+extern FILELIST *sync_files; // Used to keep track of the files that need to be synced in each directory
 
 typedef FILELIST *HASHTABLE;
 
