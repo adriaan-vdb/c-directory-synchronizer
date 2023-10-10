@@ -13,6 +13,7 @@
 #include <time.h>
 #include <dirent.h>
 
+#define HASHTABLE_SIZE 997
 #define OPTLIST "ai:no:prv"
 #define CHECK_ALLOC(p)      \
     if (p == NULL)          \
@@ -40,12 +41,13 @@ typedef struct
     LIST *o_patterns;
 } OPTIONS;
 
-OPTIONS flags;
+extern OPTIONS flags;
 
 typedef struct
 {
     char *pathname;
     char *name;
+    char *directory;
     time_t mtime;
 } FILES;
 
@@ -53,12 +55,17 @@ typedef struct _hashlist
 {
     FILES file;
     struct _hashlist *next;
-} HASHLIST;
+    bool new; // True if the file needs to be added to the directory (rather than modified); not in use for hashtable data structure
+} FILELIST;
 
-typedef HASHLIST *HASHTABLE;
+extern FILELIST *sync; // Used to keep track of the files that need to be synced in each directory
 
-HASHTABLE *files;
-int nfiles;
+typedef FILELIST *HASHTABLE;
+
+extern HASHTABLE *files;
+extern int ndirectories;
+
+extern char **directories; // Stores list of directories
 
 // struct NOTE_dirent
 // {
@@ -78,11 +85,8 @@ extern LIST *list_add(LIST *list, char *newstring);
 //  DETERMINE IF A REQUIRED ITEM (A STRING) IS STORED IN A GIVEN LIST
 extern bool list_find(LIST *list, char *wanted);
 
-//  PRINT EACH ITEM (A STRING) IN A GIVEN LIST TO stdout
-extern void list_print(LIST *list);
-
 extern HASHTABLE *hashtable_new(void);
 
 extern void hashtable_add(HASHTABLE *hashtable, FILES file);
 
-extern HASHLIST *hashtable_view(HASHTABLE *hashtable, char *pathname);
+extern FILELIST *hashtable_view(HASHTABLE *hashtable, char *pathname);
