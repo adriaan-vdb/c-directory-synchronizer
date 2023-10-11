@@ -79,11 +79,11 @@ void DOTHETHING(HASHTABLE *sync_files) { // wasn't it a filelist
 
     printf("----------- START -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?  
    
-    for (int j = 0; j < ndirectories; j++) {
+    for (int j = 0; j < ndirectories; j++) { // --- IMPORTANT: need to create ndirectories variable that discounts when tags are added
         FILELIST *current = sync_files[j];
 
         while (current != NULL){
-            printf("NAME: %s\n",current->file.name);
+            printf("File Name: %s\n",current->file.name);
 
             if (current->new){
                 char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname) ;
@@ -96,7 +96,17 @@ void DOTHETHING(HASHTABLE *sync_files) { // wasn't it a filelist
             }
 
             else{
+                
+                char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname) ;
+                char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.name);
 
+                printf("source: %s\n",(char *)source);
+                printf("destination: %s\n",(char *)destination);
+                
+                copyFiles(source, destination); 
+
+                // why does this have to be a different operation, seems to have the same functionality to me
+                
             }
             current = current->next;
         }
