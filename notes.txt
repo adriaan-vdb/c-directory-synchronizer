@@ -1,5 +1,9 @@
 GENERAL PROJECT NOTES (Josh):
 - Files are identical if they have the same file-name and contents, in the same relative location (relative to the top-level directory)
+- -i and -o options only apply to files! (not directories)
+- Default permissions are 0666 for files and 0777 for directories
+- What happens when we sync a directory and its subdirectory (does the program only pass through once? or does it infinitely execute)
+
 
 SUGGESTED SYSTEM CALLS (and what they do!):
 - perror: prints an error message to stderr (error output stream)

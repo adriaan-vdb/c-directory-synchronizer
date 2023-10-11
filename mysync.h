@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -58,12 +59,11 @@ typedef struct _hashlist
     bool new; // True if the file needs to be added to the directory (rather than modified); not in use for hashtable data structure
 } FILELIST;
 
-extern FILELIST *sync_files; // Used to keep track of the files that need to be synced in each directory
-
 typedef FILELIST *HASHTABLE;
 
 extern HASHTABLE *files;
 extern int ndirectories;
+extern HASHTABLE *sync_files; // Used to keep track of the files that need to be synced in each directory
 
 extern char **directories; // Stores list of directories
 

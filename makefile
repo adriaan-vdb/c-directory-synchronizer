@@ -7,6 +7,9 @@ C11     =  gcc -std=c11
 CFLAGS  =  -Wall -Werror 
 
 
+debug: CFLAGS += -g
+debug: $(PROJECT)
+
 $(PROJECT) : $(OBJ)
 	$(C11) $(CFLAGS) -o $(PROJECT) $(OBJ)
 

@@ -4,7 +4,7 @@ OPTIONS flags;
 HASHTABLE *files;
 int ndirectories = 0;
 char **directories;
-FILELIST *sync_files;
+HASHTABLE *sync_files;
 
 void usage()
 {
@@ -70,9 +70,12 @@ void processDirectory(const char *dirname, OPTIONS *flags)
         else // Current item is a file
         {
             FILES newfile;
-            newfile = (FILES){.pathname = path + strlen(dirname) + 1, .name = entry->d_name, .directory = (char *)dirname, .mtime = fileStat.st_mtime};
-            printf("FILE: %s\n", newfile.name);
+            newfile.directory = (char *)dirname;
+            newfile.mtime = fileStat.st_mtime;
+            newfile.pathname = path + strlen(dirname) + 1;
+            newfile.name = strdup(entry->d_name);
             hashtable_add(files, newfile);
+            printf("FILE: %s\n", hashtable_view(files, path + strlen(dirname) + 1)->file.name);
         }
         // free(path); // check this out
     }
@@ -113,8 +116,12 @@ void analyse_files()
                             continue; // Doesn't add anything instruction to directory containing the up to date file
 
                         // Adds file to other directories to be synced in
-                        FILELIST temp = sync_files[j];
-                        sync_files[j] = (FILELIST){.file = analysis[0].file, .new = true, .next = &temp};
+                        FILELIST *new_file = malloc(sizeof(FILELIST));
+                        new_file->file = analysis[0].file;
+                        new_file->new = true;
+                        new_file->next = sync_files[j];
+                        sync_files[j] = new_file;
+                        printf("TESTSYNC: %s\n", sync_files[j]->file.name);
                     }
                 }
                 // 2. More than 1 entry i.e. find most up to date version and copy to every other directory
@@ -133,7 +140,6 @@ void analyse_files()
                     {
                         if (sync_index(analysis[latest_index].file) == j)
                             continue; // Doesn't add anything instruction to directory containing the up to date file
-                        FILELIST temp = sync_files[j];
                         // Check if the directory is having if a previous version of the file exists in the current directory
                         bool new = true;
                         for (int x = 0; x < analysis_index; x++)
@@ -143,7 +149,12 @@ void analyse_files()
                                 new = false;
                             }
                         }
-                        sync_files[j] = (FILELIST){.file = analysis[latest_index].file, .new = new, .next = &temp};
+                        FILELIST *new_file = malloc(sizeof(FILELIST));
+                        new_file->file = analysis[latest_index].file;
+                        new_file->new = new;
+                        new_file->next = sync_files[j];
+                        sync_files[j] = new_file;
+                        printf("TESTSYNC: %s\n", sync_files[j]->file.name);
                     }
                 }
                 else
@@ -237,6 +248,18 @@ int main(int argc, char **argv)
 
     // Check and evaluate given directories
     analyse_files();
+
+    // print sync_files array -> for debugging purposes
+    printf("\n ------ PRINTING SYNC_FILES DEBUG ------\n");
+    for (int i = 0; i < ndirectories; i++)
+    {
+        FILELIST *temp = sync_files[i];
+        while (temp != NULL)
+        {
+            printf("%s: %s\n", directories[i], temp->file.name);
+            temp = temp->next;
+        }
+    }
 
     exit(EXIT_SUCCESS);
 }
