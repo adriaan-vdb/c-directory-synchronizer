@@ -58,7 +58,8 @@ char *concatStrings(const char *str1, const char *str2) {
     return result;
 }
 
-void DOTHETHING(FILELIST *sync_files) {
+void DOTHETHING(HASHTABLE *sync_files) { // wasn't it a filelist
+
 
 
     // extern FILELIST *sync_files; 
@@ -76,28 +77,22 @@ void DOTHETHING(FILELIST *sync_files) {
         return;
     }
 
-    printf("----------- START -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?
-    FILELIST *current = sync_files;
-
-    // printf("NAME: %s",current[0].file.name);
-    // current = current->next;    
-    // printf("NAME: %s",current[0].file.name);
-    // current = current->next;  
-
+    printf("----------- START -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?  
    
     for (int j = 0; j < ndirectories; j++) {
+        FILELIST *current = sync_files[j];
 
         while (current != NULL){
-            printf("NAME: %s",current->file.name);
+            printf("NAME: %s\n",current->file.name);
 
             if (current->new){
-                char *str1 = concatStrings(concatStrings(sync_files->file.directory, "/"), sync_files[j].file.pathname) ;
-                char *str2 = concatStrings(concatStrings(directories[j], "/"), sync_files[j].file.directory);
+                char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname) ;
+                char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.name);
 
-                printf("str1: %s",(char *)str1);
-                printf("str2: %s",(char *)str2);
+                printf("source: %s\n",(char *)source);
+                printf("destination: %s\n",(char *)destination);
                 
-                //copyFiles(str1, str2);     // (source, destination)
+                copyFiles(source, destination); 
             }
 
             else{
