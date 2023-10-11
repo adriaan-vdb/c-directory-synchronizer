@@ -26,5 +26,5 @@ SUGGESTED SYSTEM CALLS (and what they do!):
 - glob2regex(provided), regcomp and regexec
 
 
-TODO:
-1. 
+Queries:
+1. When sub directories are empty - remember to sync?
