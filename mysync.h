@@ -6,13 +6,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
 #include <sys/param.h>
 #include <time.h>
 #include <dirent.h>
+#include <utime.h>
+
 
 #define HASHTABLE_SIZE 997
 #define OPTLIST "ai:no:prv"
@@ -49,6 +49,7 @@ typedef struct
     char *pathname;
     char *name;
     char *directory;
+    mode_t permissions;
     time_t mtime;
 } FILES;
 

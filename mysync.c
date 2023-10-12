@@ -23,7 +23,7 @@ int sync_index(FILES file) // Returns the index of the sync array, given a file
     return -1;
 }
 
-void copyFiles(char *sourceFilePath, char *destFilePath)
+void copyFiles(char *sourceFilePath, char *destFilePath, FILELIST *current)
 {
 
     FILE *sourceFile = fopen(sourceFilePath, "rb");
@@ -52,6 +52,7 @@ void copyFiles(char *sourceFilePath, char *destFilePath)
     fclose(sourceFile);
     fclose(destinationFile);
 }
+
 char *concatStrings(const char *str1, const char *str2)
 {
     int totalLength = strlen(str1) + strlen(str2) + 1;
@@ -124,7 +125,7 @@ void DOTHETHING(HASHTABLE *sync_files)
                 printf("source: %s\n", (char *)source);
                 printf("destination: %s\n", (char *)destination);
 
-                copyFiles(source, destination);
+                copyFiles(source, destination, current);
             }
 
             else
@@ -136,7 +137,21 @@ void DOTHETHING(HASHTABLE *sync_files)
                 printf("source: %s\n", (char *)source);
                 printf("destination: %s\n", (char *)destination);
 
-                copyFiles(source, destination);
+                copyFiles(source, destination, current);
+
+                if (flags.p){
+                    printf("REVERTING PERMISSIONS AND MOD TIME");
+                    FILELIST *old_file = hashtable_view(files, current->file.pathname);
+                    while (strcmp(old_file->file.directory, directories[j]) != 0) {
+                        old_file = old_file->next;
+                    }
+                    mode_t new_mode = old_file->file.permissions;
+                    chmod(destination, new_mode);
+
+                    struct utimbuf new_times;
+                    new_times.modtime = old_file->file.mtime;
+                    utime(destination, &new_times);
+                }
 
                 // why does this have to be a different operation, seems to have the same functionality to me
             }
@@ -213,6 +228,7 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
                 newfile.directory = (char *)rootdirectoryname;
                 newfile.pathname = path + strlen(rootdirectoryname) + 1;
             }
+            newfile.permissions = fileStat.st_mode;
             newfile.mtime = fileStat.st_mtime;
             newfile.name = strdup(entry->d_name);
             hashtable_add(files, newfile);
