@@ -54,8 +54,8 @@ void copyFiles(char *sourceFilePath, char *destFilePath)
 }
 char *concatStrings(const char *str1, const char *str2)
 {
-    size_t totalLength = strlen(str1) + strlen(str2) + 1;
-    char *result = (char *)malloc(totalLength);
+    int totalLength = strlen(str1) + strlen(str2) + 1;
+    char *result = (char *)malloc(totalLength * sizeof(char));
 
     strcpy(result, str1);
     strcat(result, str2);
@@ -85,8 +85,10 @@ void DOTHETHING(HASHTABLE *sync_files)
                 // Create directories if they don't exist
                 // 1. Try to open directories (until they don't exist)
                 DIR *dir;
-                char *token = strtok(current->file.pathname, "/");
-                char *dirname = concatStrings(current->file.directory, token);
+                char *tempstring = current->file.pathname;
+                tempstring[strlen(current->file.pathname) - strlen(current->file.name)] = '\0';
+                char *token = strtok(tempstring, "/");
+                char *dirname = concatStrings(directories[j], concatStrings("/", token));
                 while (token != NULL && (dir = opendir(dirname)) == NULL)
                 {
                     printf("OPENING DIRECTORY: %s", dirname);
@@ -101,8 +103,12 @@ void DOTHETHING(HASHTABLE *sync_files)
                 while (token != NULL)
                 {
                     mkdir(dirname, 0777);
+                    printf("MAKING DIRECTORY: %s \n", dirname);
                     token = strtok(NULL, "/");
-                    dirname = concatStrings(dirname, concatStrings("/", token));
+                    if (token != NULL)
+                    {
+                        dirname = concatStrings(dirname, concatStrings("/", token));
+                    }
                     mkdir(dirname, 0777);
                 }
 
