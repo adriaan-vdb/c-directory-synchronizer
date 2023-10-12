@@ -225,6 +225,8 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
             }
             else
             {
+                // Insert Function to check -i and -o
+                
                 newfile.directory = (char *)rootdirectoryname;
                 newfile.pathname = path + strlen(rootdirectoryname) + 1;
             }
