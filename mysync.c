@@ -82,8 +82,32 @@ void DOTHETHING(HASHTABLE *sync_files)
 
             if (current->new)
             {
+                // Create directories if they don't exist
+                // 1. Try to open directories (until they don't exist)
+                DIR *dir;
+                char *token = strtok(current->file.pathname, "/");
+                char *dirname = concatStrings(current->file.directory, token);
+                while (token != NULL && (dir = opendir(dirname)) == NULL)
+                {
+                    printf("OPENING DIRECTORY: %s", dirname);
+                    token = strtok(NULL, "/");
+                    if (token != NULL)
+                    {
+                        dirname = concatStrings(dirname, concatStrings("/", token));
+                    }
+                }
+
+                // 2. Create any remaining directories
+                while (token != NULL)
+                {
+                    mkdir(dirname, 0777);
+                    token = strtok(NULL, "/");
+                    dirname = concatStrings(dirname, concatStrings("/", token));
+                    mkdir(dirname, 0777);
+                }
+
                 char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname);
-                char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.name);
+                char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.pathname);
 
                 printf("source: %s\n", (char *)source);
                 printf("destination: %s\n", (char *)destination);
@@ -95,7 +119,7 @@ void DOTHETHING(HASHTABLE *sync_files)
             {
 
                 char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname);
-                char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.name);
+                char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.pathname);
 
                 printf("source: %s\n", (char *)source);
                 printf("destination: %s\n", (char *)destination);
@@ -371,7 +395,7 @@ int main(int argc, char **argv)
         }
     }
 
-    // DOTHETHING(sync_files);
+    DOTHETHING(sync_files);
 
     exit(EXIT_SUCCESS);
 }
