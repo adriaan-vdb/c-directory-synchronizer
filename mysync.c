@@ -23,17 +23,19 @@ int sync_index(FILES file) // Returns the index of the sync array, given a file
     return -1;
 }
 
+void copyFiles(char *sourceFilePath, char *destFilePath)
+{
 
-void copyFiles(char *sourceFilePath, char *destFilePath){
-
-   FILE *sourceFile = fopen(sourceFilePath, "rb");
-    if (sourceFile == NULL) {
+    FILE *sourceFile = fopen(sourceFilePath, "rb");
+    if (sourceFile == NULL)
+    {
         perror("Error opening source file");
         exit(EXIT_FAILURE);
     }
 
     FILE *destinationFile = fopen(destFilePath, "wb");
-    if (destinationFile == NULL) {
+    if (destinationFile == NULL)
+    {
         perror("Error opening destination file");
         fclose(sourceFile);
         exit(EXIT_FAILURE);
@@ -42,14 +44,16 @@ void copyFiles(char *sourceFilePath, char *destFilePath){
     char buffer[4096];
     size_t bytesRead;
 
-    while ((bytesRead = fread(buffer, 1, sizeof(buffer), sourceFile)) > 0){
+    while ((bytesRead = fread(buffer, 1, sizeof(buffer), sourceFile)) > 0)
+    {
         fwrite(buffer, 1, bytesRead, destinationFile);
     }
 
     fclose(sourceFile);
     fclose(destinationFile);
 }
-char *concatStrings(const char *str1, const char *str2) {
+char *concatStrings(const char *str1, const char *str2)
+{
     size_t totalLength = strlen(str1) + strlen(str2) + 1;
     char *result = (char *)malloc(totalLength);
 
@@ -58,64 +62,54 @@ char *concatStrings(const char *str1, const char *str2) {
     return result;
 }
 
-void DOTHETHING(HASHTABLE *sync_files) { // wasn't it a filelist
-
-
-
-    // extern FILELIST *sync_files; 
-    // convert all the instructions stored in the array into actual copied files ("things" - josh - "and directories")
-    // iterate through each directory and then iterate through the list of instructions in the sync file
-    // Instructions: Create new file, modify existing file, creating directories and putting files in directories
-    // while opendir(next_name) != NULL... keep opening .. upon failure start iterativly creating directories... 
-    // and where necessary create/update file
-
-    // sync_files[j] = (FILELIST){.file = analysis[latest_index].file, .new = new, .next = &temp};
-    // where j is each directory to be synced
-
-    if (sync_files == NULL) {
+void DOTHETHING(HASHTABLE *sync_files)
+{
+    if (sync_files == NULL)
+    {
         printf("sync_files is not initialized or is an empty list.");
         return;
     }
 
-    printf("----------- START -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?  
-   
-    for (int j = 0; j < ndirectories; j++) { // --- IMPORTANT: need to create ndirectories variable that discounts when tags are added
+    printf("----------- START -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?
+
+    for (int j = 0; j < ndirectories; j++)
+    { // --- IMPORTANT: need to create ndirectories variable that discounts when tags are added
         FILELIST *current = sync_files[j];
 
-        while (current != NULL){
-            printf("File Name: %s\n",current->file.name);
+        while (current != NULL)
+        {
+            printf("File Name: %s\n", current->file.name);
 
-            if (current->new){
-                char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname) ;
+            if (current->new)
+            {
+                char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname);
                 char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.name);
 
-                printf("source: %s\n",(char *)source);
-                printf("destination: %s\n",(char *)destination);
-                
-                copyFiles(source, destination); 
+                printf("source: %s\n", (char *)source);
+                printf("destination: %s\n", (char *)destination);
+
+                copyFiles(source, destination);
             }
 
-            else{
-                
-                char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname) ;
+            else
+            {
+
+                char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname);
                 char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.name);
 
-                printf("source: %s\n",(char *)source);
-                printf("destination: %s\n",(char *)destination);
-                
-                copyFiles(source, destination); 
+                printf("source: %s\n", (char *)source);
+                printf("destination: %s\n", (char *)destination);
+
+                copyFiles(source, destination);
 
                 // why does this have to be a different operation, seems to have the same functionality to me
-                
             }
             current = current->next;
         }
     }
 }
 
-
-
-void processDirectory(const char *dirname, OPTIONS *flags)
+void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
 {
     DIR *dir;
     struct dirent *entry;
@@ -158,16 +152,42 @@ void processDirectory(const char *dirname, OPTIONS *flags)
         if (S_ISDIR(fileStat.st_mode)) // Current item is sub-directory
         {
             printf("SDIR: %s\n", entry->d_name);
+            if (flags->r)
+            {
+                if (rootdirectoryname == NULL)
+                {
+                    processDirectory(concatStrings(dirname, concatStrings("/", entry->d_name)), flags, dirname);
+                }
+                else
+                {
+                    processDirectory(concatStrings(dirname, concatStrings("/", entry->d_name)), flags, rootdirectoryname);
+                }
+            }
         }
         else // Current item is a file
         {
             FILES newfile;
-            newfile.directory = (char *)dirname;
+            if (rootdirectoryname == NULL)
+            {
+                newfile.directory = (char *)dirname;
+                newfile.pathname = path + strlen(dirname) + 1;
+            }
+            else
+            {
+                newfile.directory = (char *)rootdirectoryname;
+                newfile.pathname = path + strlen(rootdirectoryname) + 1;
+            }
             newfile.mtime = fileStat.st_mtime;
-            newfile.pathname = path + strlen(dirname) + 1;
             newfile.name = strdup(entry->d_name);
             hashtable_add(files, newfile);
-            printf("FILE: %s\n", hashtable_view(files, path + strlen(dirname) + 1)->file.name);
+            if (rootdirectoryname == NULL)
+            {
+                printf("FILE: %s\n", hashtable_view(files, path + strlen(dirname) + 1)->file.name);
+            }
+            else
+            {
+                printf("FILE: %s\n", hashtable_view(files, path + strlen(rootdirectoryname) + 1)->file.name);
+            }
         }
         // free(path); // check this out
     }
@@ -213,7 +233,6 @@ void analyse_files()
                         new_file->new = true;
                         new_file->next = sync_files[j];
                         sync_files[j] = new_file;
-                        printf("TESTSYNC: %s\n", sync_files[j]->file.name);
                     }
                 }
                 // 2. More than 1 entry i.e. find most up to date version and copy to every other directory
@@ -246,7 +265,6 @@ void analyse_files()
                         new_file->new = new;
                         new_file->next = sync_files[j];
                         sync_files[j] = new_file;
-                        printf("TESTSYNC: %s\n", sync_files[j]->file.name);
                     }
                 }
                 else
@@ -257,7 +275,6 @@ void analyse_files()
         }
     }
 }
-
 
 void create_directory_list(int optind, char **argv)
 {
@@ -333,7 +350,7 @@ int main(int argc, char **argv)
     ndirectories = 0;
     for (int i = optind; i < argc; i++)
     {
-        processDirectory(argv[i], &flags);
+        processDirectory(argv[i], &flags, NULL);
         ndirectories++;
     }
 
@@ -349,12 +366,12 @@ int main(int argc, char **argv)
         FILELIST *temp = sync_files[i];
         while (temp != NULL)
         {
-            printf("%s: %s\n", directories[i], temp->file.name);
+            printf("%s: %s\n", directories[i], temp->file.pathname);
             temp = temp->next;
         }
     }
 
-    DOTHETHING(sync_files);
+    // DOTHETHING(sync_files);
 
     exit(EXIT_SUCCESS);
 }
