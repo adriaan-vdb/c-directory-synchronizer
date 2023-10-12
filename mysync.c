@@ -82,34 +82,40 @@ void DOTHETHING(HASHTABLE *sync_files)
 
             if (current->new)
             {
-                // Create directories if they don't exist
-                // 1. Try to open directories (until they don't exist)
-                DIR *dir;
-                char *tempstring = current->file.pathname;
-                tempstring[strlen(current->file.pathname) - strlen(current->file.name)] = '\0';
-                char *token = strtok(tempstring, "/");
-                char *dirname = concatStrings(directories[j], concatStrings("/", token));
-                while (token != NULL && (dir = opendir(dirname)) == NULL)
+                // Accounts for recursive cases
+                if (strchr(current->file.pathname, '/') != NULL)
                 {
-                    printf("OPENING DIRECTORY: %s", dirname);
-                    token = strtok(NULL, "/");
-                    if (token != NULL)
+                    // Create directories if they don't exist
+                    // 1. Try to open directories (until they don't exist)
+                    DIR *dir;
+                    char *tempstring = malloc(strlen(current->file.pathname) * sizeof(char));
+                    CHECK_ALLOC(tempstring);
+                    tempstring = strdup(current->file.pathname);
+                    tempstring[strlen(current->file.pathname) - strlen(current->file.name) - 1] = '\0';
+                    char *token = strtok(tempstring, "/");
+                    char *dirname = concatStrings(directories[j], concatStrings("/", token));
+                    while (token != NULL && (dir = opendir(dirname)) != NULL)
                     {
-                        dirname = concatStrings(dirname, concatStrings("/", token));
+                        printf("OPENING DIRECTORY: %s \n", dirname);
+                        token = strtok(NULL, "/");
+                        if (token != NULL)
+                        {
+                            dirname = concatStrings(dirname, concatStrings("/", token));
+                        }
                     }
-                }
 
-                // 2. Create any remaining directories
-                while (token != NULL)
-                {
-                    mkdir(dirname, 0777);
-                    printf("MAKING DIRECTORY: %s \n", dirname);
-                    token = strtok(NULL, "/");
-                    if (token != NULL)
+                    // 2. Create any remaining directories
+                    while (token != NULL)
                     {
-                        dirname = concatStrings(dirname, concatStrings("/", token));
+                        mkdir(dirname, 0777);
+                        printf("MAKING DIRECTORY: %s \n", dirname);
+                        token = strtok(NULL, "/");
+                        if (token != NULL)
+                        {
+                            dirname = concatStrings(dirname, concatStrings("/", token));
+                        }
+                        mkdir(dirname, 0777);
                     }
-                    mkdir(dirname, 0777);
                 }
 
                 char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname);
@@ -396,7 +402,7 @@ int main(int argc, char **argv)
         FILELIST *temp = sync_files[i];
         while (temp != NULL)
         {
-            printf("%s: %s\n", directories[i], temp->file.pathname);
+            printf("%s needs %s from %s\n", directories[i], temp->file.pathname, temp->file.directory);
             temp = temp->next;
         }
     }
