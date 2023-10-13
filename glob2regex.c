@@ -4,7 +4,7 @@
 //		     ALLOCATED MEMORY.
 //	ON FAILURE - A NULL POINTER WILL BE RETURNED.
 
-#include <stdlib.h>
+#include "mysync.h"
 
 char *glob2regex(char *glob)
 {

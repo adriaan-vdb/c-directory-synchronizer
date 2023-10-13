@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-
 #include "mysync.h"
 
 //  'CREATE' A NEW, EMPTY LIST - JUST A NULL POINTER
@@ -30,8 +25,8 @@ LIST *list_new_item(char *newstring)
 {
     LIST *new = calloc(1, sizeof(LIST));
     CHECK_ALLOC(new);
-    // new->string     =  strdup(newstring);
-    sprintf(new->string, "%s", newstring);
+    new->string = strdup(newstring);
+    // sprintf(new->string, "%s", newstring);
     CHECK_ALLOC(new->string);
     new->next = NULL;
     return new;

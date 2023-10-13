@@ -139,10 +139,12 @@ void DOTHETHING(HASHTABLE *sync_files)
 
                 copyFiles(source, destination, current);
 
-                if (flags.p){
+                if (flags.p)
+                {
                     printf("REVERTING PERMISSIONS AND MOD TIME");
                     FILELIST *old_file = hashtable_view(files, current->file.pathname);
-                    while (strcmp(old_file->file.directory, directories[j]) != 0) {
+                    while (strcmp(old_file->file.directory, directories[j]) != 0)
+                    {
                         old_file = old_file->next;
                     }
                     mode_t new_mode = old_file->file.permissions;
@@ -158,6 +160,34 @@ void DOTHETHING(HASHTABLE *sync_files)
             current = current->next;
         }
     }
+}
+
+bool in_list(char *filename, LIST *patterns)
+{
+    while (patterns != NULL)
+    {
+        // do stuff
+        char *globpattern = patterns->string;
+        char *regexpattern = glob2regex(globpattern);
+        if (regexpattern)
+        {
+            regex_t regex;
+            int err = regcomp(&regex, regexpattern, 0);
+            if (err != 0)
+            {
+                perror("Couldn't compute regcomp of glob pattern");
+            }
+            if (regexec(&regex, filename, 0, NULL, 0) == 0)
+            {
+                printf("IGNORING: %s", filename);
+                return true;
+            }
+            regfree(&regex);
+        }
+        free(regexpattern);
+        patterns = patterns->next;
+    }
+    return false;
 }
 
 void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
@@ -193,6 +223,23 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         if (!flags->a && entry->d_name[0] == '.')
         {
             continue;
+        }
+
+        if (flags->i)
+        {
+            // continue (skip iteration) if file is in the ignore list
+            if (in_list(entry->d_name, flags->i_patterns))
+            {
+                continue;
+            }
+        }
+        else if (flags->o)
+        {
+            // continue (skip iteration) if file not in the only list
+            if (!in_list(entry->d_name, flags->o_patterns))
+            {
+                continue;
+            }
         }
 
         // Check if current entry is a file or directory (note that d_type doesn't work on windows)
@@ -373,7 +420,7 @@ int main(int argc, char **argv)
             break;
         case 'i':
             flags.i = true;
-            list_add(flags.i_patterns, optarg);
+            flags.i_patterns = list_add(flags.i_patterns, optarg);
             // need to evaluate given pattern/s
             break;
         case 'n':
@@ -383,7 +430,7 @@ int main(int argc, char **argv)
             break;
         case 'o':
             flags.o = true;
-            list_add(flags.o_patterns, optarg);
+            flags.o_patterns = list_add(flags.o_patterns, optarg);
             // need to evaluate given pattern/s
             break;
         case 'p':

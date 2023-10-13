@@ -1,10 +1,10 @@
 PROJECT =  mysync
 HEADERS =  $(PROJECT).h
-OBJ     =  mysync.o List.o hashtable.o
+OBJ     =  mysync.o List.o hashtable.o glob2regex.o
 
 
 C11     =  gcc -std=c11
-CFLAGS  =  -Wall -Werror 
+CFLAGS  =  -Wall -Werror
 
 
 debug: CFLAGS += -g

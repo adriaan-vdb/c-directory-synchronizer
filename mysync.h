@@ -12,7 +12,7 @@
 #include <time.h>
 #include <dirent.h>
 #include <utime.h>
-
+#include <regex.h>
 
 #define HASHTABLE_SIZE 997
 #define OPTLIST "ai:no:prv"
@@ -76,6 +76,7 @@ extern char **directories; // Stores list of directories
 //     unsigned char d_type;    // Type of file (e.g., DT_REG for regular file, DT_DIR for directory)
 //     char d_name[];           // Null-terminated filename
 // };
+extern char *glob2regex(char *glob);
 
 //  'CREATE' A NEW, EMPTY LIST
 extern LIST *list_new(void);
