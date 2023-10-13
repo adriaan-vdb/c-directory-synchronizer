@@ -272,7 +272,7 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
             }
             else
             {
-                newfile.directory = (char *)rootdirectoryname;
+                                newfile.directory = (char *)rootdirectoryname;
                 newfile.pathname = path + strlen(rootdirectoryname) + 1;
             }
             newfile.permissions = fileStat.st_mode;
