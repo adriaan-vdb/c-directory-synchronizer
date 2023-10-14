@@ -225,21 +225,20 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
             continue;
         }
 
-        if (flags->i)
+        if (flags->o && flags->i && in_list(entry->d_name, flags->i_patterns))
+        {
+            // continue (skip iteration) if file is in ignore list at all
+            continue;
+        }
+        else if (flags->i && in_list(entry->d_name, flags->i_patterns))
         {
             // continue (skip iteration) if file is in the ignore list
-            if (in_list(entry->d_name, flags->i_patterns))
-            {
-                continue;
-            }
+            continue;
         }
-        else if (flags->o)
+        else if (flags->o && !in_list(entry->d_name, flags->o_patterns))
         {
             // continue (skip iteration) if file not in the only list
-            if (!in_list(entry->d_name, flags->o_patterns))
-            {
-                continue;
-            }
+            continue;
         }
 
         // Check if current entry is a file or directory (note that d_type doesn't work on windows)
@@ -272,7 +271,7 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
             }
             else
             {
-                                newfile.directory = (char *)rootdirectoryname;
+                newfile.directory = (char *)rootdirectoryname;
                 newfile.pathname = path + strlen(rootdirectoryname) + 1;
             }
             newfile.permissions = fileStat.st_mode;
