@@ -213,7 +213,6 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         perror("Unable to open directory");
         exit(EXIT_FAILURE);
     }
-    printf("Directory Name: %s\n", (char *)dirname);
 
     while ((entry = readdir(dir)) != NULL)
     {
@@ -249,7 +248,15 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         stat(path, &fileStat);
         if (S_ISDIR(fileStat.st_mode)) // Current item is sub-directory
         {
-            printf("SDIR: %s\n", entry->d_name);
+            if (flags->v){
+                if (rootdirectoryname != NULL && strcmp(dirname, rootdirectoryname) == 0) { // this aint working
+                    printf("scanning toplevel: '%s'\n", entry->d_name);
+                    } 
+                else {
+                    printf("recursively scanning subdirectory: '%s'\n", entry->d_name);
+                    }
+            }
+    
             if (flags->r)
             {
                 if (rootdirectoryname == NULL)
@@ -272,7 +279,7 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
             }
             else
             {
-                                newfile.directory = (char *)rootdirectoryname;
+                newfile.directory = (char *)rootdirectoryname;
                 newfile.pathname = path + strlen(rootdirectoryname) + 1;
             }
             newfile.permissions = fileStat.st_mode;
@@ -459,16 +466,16 @@ int main(int argc, char **argv)
     analyse_files();
 
     // print sync_files array -> for debugging purposes
-    printf("\n ------ PRINTING SYNC_FILES DEBUG ------\n");
-    for (int i = 0; i < ndirectories; i++)
-    {
-        FILELIST *temp = sync_files[i];
-        while (temp != NULL)
-        {
-            printf("%s needs %s from %s\n", directories[i], temp->file.pathname, temp->file.directory);
-            temp = temp->next;
-        }
-    }
+    // printf("\n ------ PRINTING SYNC_FILES DEBUG ------\n");
+    // for (int i = 0; i < ndirectories; i++)
+    // {
+    //     FILELIST *temp = sync_files[i];
+    //     while (temp != NULL)
+    //     {
+    //         printf("%s needs %s from %s\n", directories[i], temp->file.pathname, temp->file.directory);
+    //         temp = temp->next;
+    //     }
+    // }
 
     DOTHETHING(sync_files);
 
