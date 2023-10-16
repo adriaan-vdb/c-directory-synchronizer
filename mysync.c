@@ -8,7 +8,7 @@ HASHTABLE *sync_files;
 
 void usage()
 {
-    // printf("- USAGE\n");
+    printf("- USAGE\n");
 }
 
 int sync_index(FILES file) // Returns the index of the sync array, given a file

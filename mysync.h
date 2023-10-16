@@ -92,3 +92,21 @@ extern HASHTABLE *hashtable_new(void);
 extern void hashtable_add(HASHTABLE *hashtable, FILES file);
 
 extern FILELIST *hashtable_view(HASHTABLE *hashtable, char *pathname);
+
+extern int sync_index(FILES file);
+
+extern void copyFiles(char *sourceFilePath, char *destFilePath, FILELIST *current);
+
+extern char *concatStrings(const char *str1, const char *str2);
+
+extern void DOTHETHING(HASHTABLE *sync_files);
+
+extern bool in_list(char *filename, LIST *patterns);
+
+extern void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname);
+
+extern void analyse_files();
+
+extern void create_directory_list(int optind, char **argv);
+
+extern void usage();
