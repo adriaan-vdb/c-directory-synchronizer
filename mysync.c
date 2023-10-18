@@ -1,18 +1,26 @@
 #include "mysync.h"
 
+// Initialises variables declared in header file
 OPTIONS flags;
 HASHTABLE *files;
 int ndirectories = 0;
 char **directories;
-HASHTABLE *sync_files;
 
+HASHTABLE *sync_files; // An a array of lists of files, where each element in the array represents a directory
+// The lists of files represent instructions - where each file either has
+// 1. New = true; the current directory doesn't contain an older version of this file (a file needs to be created)
+// 2. New = false; the current directory contains an older version of this file (the file needs to be updated)
+
+// Provides synopsis of program usage for appropriate use
 void usage()
 {
     printf("Usage:  ./mysync  [options]  directory1  directory2  [directory3  ...]\n");
 }
 
-int sync_index(FILES file) // Returns the index of the sync array, given a file
+// Index of the directory of a file; used to organise sync_files[]
+int sync_index(FILES file)
 {
+    // Iterates through list of directories and returns index when list matches the name of the file's directory
     for (int i = 0; i < ndirectories; i++)
     {
         if (strcmp(directories[i], file.directory) == 0)
@@ -20,12 +28,14 @@ int sync_index(FILES file) // Returns the index of the sync array, given a file
             return i;
         }
     }
-    return -1;
+    fprintf(stderr, "Directory '%s' could not be found in list of given directories \n", file.directory);
+    exit(EXIT_FAILURE);
 }
 
-void copyFiles(char *sourceFilePath, char *destFilePath, FILELIST *current)
+// Copies a file from one path to another
+void copy_files(char *sourceFilePath, char *destFilePath)
 {
-
+    // Attempts to open the source file
     FILE *sourceFile = fopen(sourceFilePath, "rb");
     if (sourceFile == NULL)
     {
@@ -33,6 +43,7 @@ void copyFiles(char *sourceFilePath, char *destFilePath, FILELIST *current)
         exit(EXIT_FAILURE);
     }
 
+    // Attempts to open the destination file
     FILE *destinationFile = fopen(destFilePath, "wb");
     if (destinationFile == NULL)
     {
@@ -41,9 +52,10 @@ void copyFiles(char *sourceFilePath, char *destFilePath, FILELIST *current)
         exit(EXIT_FAILURE);
     }
 
-    char buffer[4096];
-    size_t bytesRead;
+    char buffer[4096]; // Stores each line to be copied to new file
+    size_t bytesRead;  // Stores number of bytes read
 
+    // Iteratively copies each line of source file to destination file
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), sourceFile)) > 0)
     {
         fwrite(buffer, 1, bytesRead, destinationFile);
@@ -53,22 +65,26 @@ void copyFiles(char *sourceFilePath, char *destFilePath, FILELIST *current)
     fclose(destinationFile);
 }
 
-char *concatStrings(const char *str1, const char *str2)
+// Concatenates str1+str2 and returns the string
+char *concat_strings(const char *str1, const char *str2)
 {
+    // Calculates and allocates appropriate amount of memory for concatenated string
     int totalLength = strlen(str1) + strlen(str2) + 1;
     char *result = (char *)malloc(totalLength * sizeof(char));
 
+    // Performs and returns concatenation (this allows concatenation to be chained)
     strcpy(result, str1);
     strcat(result, str2);
     return result;
 }
 
-void DOTHETHING(HASHTABLE *sync_files)
+// Follows the instructions in sync_files[], to sync the directories
+void synchronise_directories(HASHTABLE *sync_files)
 {
     if (sync_files == NULL)
     {
-        printf("sync_files is not initialized or is an empty list.");
-        return;
+        fprintf(stderr, "No instructions for syncing - sync_files array is empty \n");
+        exit(EXIT_FAILURE);
     }
 
     if (flags.v)
@@ -76,38 +92,49 @@ void DOTHETHING(HASHTABLE *sync_files)
         printf("\n----------- SYNC COMMENCING -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?
     }
 
+    // Synchronises each directory (one at a time), following the instructions provided by sync_files[]
     for (int j = 0; j < ndirectories; j++)
-    { // --- IMPORTANT: need to create ndirectories variable that discounts when tags are added
+    {
+        // Points to the current (initially, the first) instruction/file item of the current directory
         FILELIST *current = sync_files[j];
 
+        // Iterates through the list of instructions and executes each individually
         while (current != NULL)
         {
-            printf("\n");
-            if (current->new)
+            if (flags.v)
             {
-                // Accounts for recursive cases
+                printf("\n");
+            }
+
+            // Checks if a file is needing to be created or updated, and works accordingly
+            if (current->new) // File needs to be created
+            {
+                // Takes appropriate action for syncing files that are within subdirectories that currently don't exist in current directory
                 if (strchr(current->file.pathname, '/') != NULL)
                 {
-                    // Create directories if they don't exist
-                    // 1. Try to open directories (until they don't exist)
+                    // 1. Try to open subdirectories (until they don't exist)
                     DIR *dir;
                     char *tempstring = malloc(strlen(current->file.pathname) * sizeof(char));
                     CHECK_ALLOC(tempstring);
                     tempstring = strdup(current->file.pathname);
                     tempstring[strlen(current->file.pathname) - strlen(current->file.name) - 1] = '\0';
+                    // Tempstring split into tokens so subdirectories are sequentially opened
+                    // e.g. tries to open Subdirectory1, then Subdirectory1/Subdirectory2, ... until the subdirectory doesn't exist
                     char *token = strtok(tempstring, "/");
-                    char *dirname = concatStrings(directories[j], concatStrings("/", token));
+                    char *dirname = concat_strings(directories[j], concat_strings("/", token));
                     while (token != NULL && (dir = opendir(dirname)) != NULL)
                     {
                         printf("OPENING DIRECTORY: %s \n", dirname);
                         token = strtok(NULL, "/");
                         if (token != NULL)
                         {
-                            dirname = concatStrings(dirname, concatStrings("/", token));
+                            dirname = concat_strings(dirname, concat_strings("/", token));
                         }
                     }
 
-                    // 2. Create any remaining directories
+                    // 2. Create any remaining subdirectories
+                    // Creates new subdirectories until the full "chain of subdirectories" is finished
+                    // e.g. creates Subdirectory1/Subdirectory2/Subdirectory3, Subdirectory1/Subdirectory2/Subdirectory3/Subdirectory4, ...
                     while (token != NULL)
                     {
                         mkdir(dirname, 0777);
@@ -115,49 +142,60 @@ void DOTHETHING(HASHTABLE *sync_files)
                         token = strtok(NULL, "/");
                         if (token != NULL)
                         {
-                            dirname = concatStrings(dirname, concatStrings("/", token));
+                            dirname = concat_strings(dirname, concat_strings("/", token));
                         }
                         mkdir(dirname, 0777);
                     }
                 }
 
-                char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname);
-                char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.pathname);
+                // Constructs the pathname of the source and destination files
+                char *source = concat_strings(concat_strings(current->file.directory, "/"), current->file.pathname);
+                char *destination = concat_strings(concat_strings(directories[j], "/"), current->file.pathname);
 
                 if (flags.v)
                 {
                     printf("-- %s \n - copied from: %s\n", (char *)destination, (char *)source);
                 }
 
-                copyFiles(source, destination, current);
+                copy_files(source, destination); // Copies the source file into the destination file
+
+                if (flags.p)
+                {
+                    mode_t new_mode = current->file.permissions;
+                    chmod(destination, new_mode);
+
+                    struct utimbuf new_times;
+                    new_times.modtime = current->file.mtime;
+                    utime(destination, &new_times);
+
+                    if (flags.v)
+                    {
+                        printf("  - REVERTING MOD TIME: %s", ctime(&new_times.modtime));
+                        printf("  - REVERTING PERMISSIONS: %o\n", new_mode);
+                    }
+                }
             }
 
-            else
+            else // File needs to be updated (an older version already exists)
             {
-
-                char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname);
-                char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.pathname);
+                // Constructs the pathname of the source and destination files
+                char *source = concat_strings(concat_strings(current->file.directory, "/"), current->file.pathname);
+                char *destination = concat_strings(concat_strings(directories[j], "/"), current->file.pathname);
 
                 if (flags.v)
                 {
                     printf("-- %s \n - updated from: %s\n", (char *)destination, (char *)source);
                 }
 
-                copyFiles(source, destination, current);
+                copy_files(source, destination); // Copies the source file into the destination file
 
                 if (flags.p)
                 {
-
-                    FILELIST *old_file = hashtable_view(files, current->file.pathname);
-                    while (strcmp(old_file->file.directory, directories[j]) != 0)
-                    {
-                        old_file = old_file->next;
-                    }
-                    mode_t new_mode = old_file->file.permissions;
+                    mode_t new_mode = current->file.permissions;
                     chmod(destination, new_mode);
 
                     struct utimbuf new_times;
-                    new_times.modtime = old_file->file.mtime;
+                    new_times.modtime = current->file.mtime;
                     utime(destination, &new_times);
 
                     if (flags.v)
@@ -205,7 +243,7 @@ bool in_list(char *filename, LIST *patterns)
     return false;
 }
 
-void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
+void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
 {
 
     DIR *dir;
@@ -260,11 +298,11 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
             {
                 if (rootdirectoryname == NULL)
                 {
-                    processDirectory(concatStrings(dirname, concatStrings("/", entry->d_name)), flags, dirname);
+                    process_directory(concat_strings(dirname, concat_strings("/", entry->d_name)), flags, dirname);
                 }
                 else
                 {
-                    processDirectory(concatStrings(dirname, concatStrings("/", entry->d_name)), flags, rootdirectoryname);
+                    process_directory(concat_strings(dirname, concat_strings("/", entry->d_name)), flags, rootdirectoryname);
                 }
             }
         }
@@ -491,7 +529,6 @@ int main(int argc, char **argv)
 
     if (argc - optind + 1 < 3) // If less than 2 directories are named
     {
-        printf("%d", optind);
         usage();
         perror("Less than 2 directories are named.");
         exit(EXIT_FAILURE);
@@ -511,7 +548,7 @@ int main(int argc, char **argv)
         {
             printf("\nscanning toplevel: '%s'\n", argv[i]);
         }
-        processDirectory(argv[i], &flags, NULL);
+        process_directory(argv[i], &flags, NULL);
         ndirectories++;
     }
 
@@ -532,7 +569,7 @@ int main(int argc, char **argv)
     //     }
     // }
 
-    DOTHETHING(sync_files);
+    synchronise_directories(sync_files);
 
     exit(EXIT_SUCCESS);
 }
