@@ -124,7 +124,6 @@ void synchronise_directories()
                     char *dirname = concat_strings(directories[j], concat_strings("/", token));
                     while (token != NULL && (dir = opendir(dirname)) != NULL)
                     {
-                        printf("OPENING DIRECTORY: %s \n", dirname);
                         token = strtok(NULL, "/");
                         if (token != NULL)
                         {
@@ -138,7 +137,10 @@ void synchronise_directories()
                     while (token != NULL)
                     {
                         mkdir(dirname, 0777);
-                        printf("MAKING DIRECTORY: %s \n", dirname);
+                        if (flags.v)
+                        {
+                            printf("MAKING DIRECTORY: %s \n", dirname);
+                        }
                         token = strtok(NULL, "/");
                         if (token != NULL)
                         {
