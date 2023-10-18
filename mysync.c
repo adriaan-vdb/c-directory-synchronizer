@@ -70,8 +70,9 @@ void DOTHETHING(HASHTABLE *sync_files)
         printf("sync_files is not initialized or is an empty list.");
         return;
     }
-    
-    if (flags.v){
+
+    if (flags.v)
+    {
         printf("\n----------- SYNC COMMENCING -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?
     }
 
@@ -123,7 +124,8 @@ void DOTHETHING(HASHTABLE *sync_files)
                 char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname);
                 char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.pathname);
 
-                if (flags.v){
+                if (flags.v)
+                {
                     printf("-- %s \n - copied from: %s\n", (char *)destination, (char *)source);
                 }
 
@@ -136,7 +138,8 @@ void DOTHETHING(HASHTABLE *sync_files)
                 char *source = concatStrings(concatStrings(current->file.directory, "/"), current->file.pathname);
                 char *destination = concatStrings(concatStrings(directories[j], "/"), current->file.pathname);
 
-                if (flags.v){
+                if (flags.v)
+                {
                     printf("-- %s \n - updated from: %s\n", (char *)destination, (char *)source);
                 }
 
@@ -144,7 +147,7 @@ void DOTHETHING(HASHTABLE *sync_files)
 
                 if (flags.p)
                 {
-                   
+
                     FILELIST *old_file = hashtable_view(files, current->file.pathname);
                     while (strcmp(old_file->file.directory, directories[j]) != 0)
                     {
@@ -157,7 +160,8 @@ void DOTHETHING(HASHTABLE *sync_files)
                     new_times.modtime = old_file->file.mtime;
                     utime(destination, &new_times);
 
-                    if (flags.v){
+                    if (flags.v)
+                    {
                         printf("  - REVERTING MOD TIME: %s", ctime(&new_times.modtime));
                         printf("  - REVERTING PERMISSIONS: %o\n", new_mode);
                     }
@@ -187,7 +191,8 @@ bool in_list(char *filename, LIST *patterns)
             }
             if (regexec(&regex, filename, 0, NULL, 0) == 0)
             {
-                if (flags.v) {
+                if (flags.v)
+                {
                     printf("IGNORING: %s", filename);
                 }
                 return true;
@@ -229,38 +234,6 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
     {
         struct stat fileStat;
 
-        // Check if -a flag present
-        if (!flags->a && entry->d_name[0] == '.')
-        {
-            printf("- Skipping (no tag a): '%s' \n", entry->d_name);
-            continue;
-        }
-
-        if (flags->o && flags->i && in_list(entry->d_name, flags->i_patterns))
-        {
-            // continue (skip iteration) if file is in ignore list at all
-            if (flags->v){
-                printf("- Skipping (in ignore list): '%s'\n", entry->d_name);
-            }
-            continue;
-        }
-        else if (flags->i && in_list(entry->d_name, flags->i_patterns))
-        {
-            // continue (skip iteration) if file is in the ignore list
-            if (flags->v){
-                printf("- Skipping (in ignore list): '%s'\n", entry->d_name);
-            }
-            continue;
-        }
-        else if (flags->o && !in_list(entry->d_name, flags->o_patterns))
-        {
-            // continue (skip iteration) if file not in the only list
-            if (flags->v){
-                printf("- Skipping (not in only list): '%s'\n", entry->d_name);
-            }
-            continue;
-        }
-
         // Check if current entry is a file or directory (note that d_type doesn't work on windows)
         char *path = malloc(sizeof(char) * (strlen(dirname) + 1 + strlen(entry->d_name) + 1));
         CHECK_ALLOC(path);
@@ -268,11 +241,20 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         stat(path, &fileStat);
         if (S_ISDIR(fileStat.st_mode)) // Current item is sub-directory
         {
-            if (flags->v){
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            {
+                if (flags->v)
+                {
+                    printf("- Skipping subdirectory: '%s'\n", entry->d_name);
+                }
+                continue;
+            }
+            if (flags->v)
+            {
                 printf(" -- recursively scanning subdirectory: '%s'\n", entry->d_name);
             }
 
-            //printf("\t");
+            // printf("\t");
 
             if (flags->r)
             {
@@ -288,6 +270,40 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         }
         else // Current item is a file
         {
+            // Check if -a flag present
+            if (!flags->a && entry->d_name[0] == '.')
+            {
+                printf("- Skipping (no tag a): '%s' \n", entry->d_name);
+                continue;
+            }
+            else if (flags->o && flags->i && in_list(entry->d_name, flags->i_patterns))
+            {
+                // continue (skip iteration) if file is in ignore list at all
+                if (flags->v)
+                {
+                    printf("- Skipping (in ignore list): '%s'\n", entry->d_name);
+                }
+                continue;
+            }
+            else if (flags->i && in_list(entry->d_name, flags->i_patterns))
+            {
+                // continue (skip iteration) if file is in the ignore list
+                if (flags->v)
+                {
+                    printf("- Skipping (in ignore list): '%s'\n", entry->d_name);
+                }
+                continue;
+            }
+            else if (flags->o && !in_list(entry->d_name, flags->o_patterns))
+            {
+                // continue (skip iteration) if file not in the only list
+                if (flags->v)
+                {
+                    printf("- Skipping (not in only list): '%s'\n", entry->d_name);
+                }
+                continue;
+            }
+
             FILES newfile;
             if (rootdirectoryname == NULL)
             {
@@ -321,7 +337,8 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
 
 void analyse_files()
 {
-    if (flags.v){
+    if (flags.v)
+    {
         printf("\n----------- FILE ANALYSIS COMMENCING -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?
     }
     sync_files = calloc(ndirectories, sizeof(FILELIST *)); // creates array with a linked list of files for each directory
@@ -348,8 +365,9 @@ void analyse_files()
                 // Analyse each entry - two cases
                 // 1. Only 1 entry (just copy over to every other directory)
                 if (analysis_index == 1)
-            {
-                    if (flags.v){
+                {
+                    if (flags.v)
+                    {
                         printf("FILE to be created: %s\n", (char *)relative_location);
                     }
                     for (int j = 0; j < ndirectories; j++)
@@ -368,9 +386,10 @@ void analyse_files()
                 // 2. More than 1 entry i.e. find most up to date version and copy to every other directory
                 else if (analysis_index != 0)
                 {
-                    if (flags.v){
-                            printf("Latest Version: %s\n", (char *)relative_location);
-                        }
+                    if (flags.v)
+                    {
+                        printf("Latest Version: %s\n", (char *)relative_location);
+                    }
                     // Find the most up to date version (latest modification time)
                     int latest_index = 0; // Stores the index of the most up to date file version
                     for (int j = 1; j < analysis_index; j++)
@@ -478,7 +497,8 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    if (flags.v){
+    if (flags.v)
+    {
         printf("\n----------- SCAN COMMENCING -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?
     }
 
@@ -487,7 +507,8 @@ int main(int argc, char **argv)
     ndirectories = 0;
     for (int i = optind; i < argc; i++)
     {
-        if (flags.v){
+        if (flags.v)
+        {
             printf("\nscanning toplevel: '%s'\n", argv[i]);
         }
         processDirectory(argv[i], &flags, NULL);
