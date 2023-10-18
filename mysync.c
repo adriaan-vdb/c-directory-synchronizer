@@ -404,15 +404,15 @@ void analyse_files()
                 // 1. Only 1 entry (just copy over to every other directory)
                 if (analysis_index == 1)
                 {
-                    if (flags.v)
-                    {
-                        printf("FILE to be created: %s\n", (char *)relative_location);
-                    }
                     // Adds sync instructions to each directory
                     for (int j = 0; j < ndirectories; j++)
                     {
                         if (sync_index(analysis[0].file) == j)
                             continue; // Doesn't add anything instruction to directory containing the up to date file
+                        if (flags.v)
+                        {
+                            printf("FILE to be created: %s in %s\n", (char *)relative_location, directories[j]);
+                        }
 
                         // Adds file to other directories to be synced in
                         FILELIST *new_file = malloc(sizeof(FILELIST));
@@ -425,10 +425,6 @@ void analyse_files()
                 // 2. More than 1 entry i.e. find most up to date version and copy to every other directory
                 else if (analysis_index != 0)
                 {
-                    if (flags.v)
-                    {
-                        printf("Latest Version: %s\n", (char *)relative_location);
-                    }
                     // Find the most up to date version (latest modification time)
                     int latest_index = 0; // Stores the index of the most up to date file version
                     for (int j = 1; j < analysis_index; j++)
@@ -451,6 +447,14 @@ void analyse_files()
                             {
                                 new = false;
                             }
+                        }
+                        if (flags.v && new)
+                        {
+                            printf("FILE to be created: %s in %s\n", (char *)relative_location, directories[j]);
+                        }
+                        else if (flags.v)
+                        {
+                            printf("FILE to be udpated: %s in %s\n", (char *)relative_location, directories[j]);
                         }
                         FILELIST *new_file = malloc(sizeof(FILELIST));
                         new_file->file = analysis[latest_index].file;
@@ -558,7 +562,10 @@ int main(int argc, char **argv)
     analyse_files();
 
     // Carry out sync instructions
-    synchronise_directories();
+    if (!flags.n)
+    {
+        synchronise_directories();
+    }
 
     exit(EXIT_SUCCESS);
 }
