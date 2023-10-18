@@ -8,7 +8,7 @@ HASHTABLE *sync_files;
 
 void usage()
 {
-    printf("- USAGE\n");
+    printf("Usage:  ./mysync  [options]  directory1  directory2  [directory3  ...]\n");
 }
 
 int sync_index(FILES file) // Returns the index of the sync array, given a file
@@ -143,7 +143,7 @@ void DOTHETHING(HASHTABLE *sync_files)
 
                 if (flags.p)
                 {
-                    printf("REVERTING PERMISSIONS AND MOD TIME");
+                   
                     FILELIST *old_file = hashtable_view(files, current->file.pathname);
                     while (strcmp(old_file->file.directory, directories[j]) != 0)
                     {
@@ -155,6 +155,11 @@ void DOTHETHING(HASHTABLE *sync_files)
                     struct utimbuf new_times;
                     new_times.modtime = old_file->file.mtime;
                     utime(destination, &new_times);
+
+                    if (flags.v){
+                        printf("  - REVERTING MOD TIME: %s", ctime(&new_times.modtime));
+                        printf("  - REVERTING PERMISSIONS: %o\n", new_mode);
+                    }
                 }
 
                 // why does this have to be a different operation, seems to have the same functionality to me
@@ -232,16 +237,25 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         if (flags->o && flags->i && in_list(entry->d_name, flags->i_patterns))
         {
             // continue (skip iteration) if file is in ignore list at all
+            if (flags->v){
+                printf("Skipping (in ignore list): '%s'\n", entry->d_name);
+            }
             continue;
         }
         else if (flags->i && in_list(entry->d_name, flags->i_patterns))
         {
             // continue (skip iteration) if file is in the ignore list
+            if (flags->v){
+                printf("Skipping (in ignore list): '%s'\n", entry->d_name);
+            }
             continue;
         }
         else if (flags->o && !in_list(entry->d_name, flags->o_patterns))
         {
             // continue (skip iteration) if file not in the only list
+            if (flags->v){
+                printf("Skipping (not in only list): '%s'\n", entry->d_name);
+            }
             continue;
         }
 
@@ -413,14 +427,6 @@ void create_directory_list(int optind, char **argv)
 
 int main(int argc, char **argv)
 {
-    if (argc < 3) // If less than 2 directories are named
-    {
-        perror("Less than 2 directories are named.");
-        exit(EXIT_FAILURE);
-    }
-
-    usage();
-
     // Check and evalute command line options
 
     int opt;
@@ -460,6 +466,14 @@ int main(int argc, char **argv)
         default:
             perror("Invalid option provided");
         }
+    }
+
+    if (argc - optind + 1 < 3) // If less than 2 directories are named
+    {
+        printf("%d", optind);
+        usage();
+        perror("Less than 2 directories are named.");
+        exit(EXIT_FAILURE);
     }
 
     if (flags.v){
