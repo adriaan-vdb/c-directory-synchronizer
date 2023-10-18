@@ -83,11 +83,11 @@ extern HASHTABLE *hashtable_new(void);                                          
 extern void hashtable_add(HASHTABLE *hashtable, FILES file);                           // Add a new file item into the existing hashtable
 extern FILELIST *hashtable_view(HASHTABLE *hashtable, char *pathname);                 // View the file item with the given pathname
 extern int sync_index(FILES file);                                                     // Index of the directory of a file; used to organise sync_files[]
-extern void copy_files(char *sourceFilePath, char *destFilePath);   // Copies a file from one path to another
+extern void copy_files(char *sourceFilePath, char *destFilePath);                      // Copies a file from one path to another
 extern char *concat_strings(const char *str1, const char *str2);                       // Concatenates str1+str2 and returns the string
-extern void analyse_files();                                                           // Scans each directory and stores files in a hashtable
-extern void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname); // Processes the hashtable into instructions for syncing
-extern void synchronise_directories(HASHTABLE *sync_files);                            // Follows the instructions in sync_files[], to sync the directories
+extern void analyse_files();                                                           // Processes the hashtable into instructions for syncing
+extern void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname); // Scans each directory and stores files in a hashtable
+extern void synchronise_directories();                                                 // Follows the instructions in sync_files[], to sync the directories
 extern bool in_list(char *filename, LIST *patterns);                                   // Checks if a filename matches with any of the globs in a list of strings
 extern void create_directory_list(int optind, char **argv);                            // Creates a list of the provided directories
 extern void usage();                                                                   // Provides synopsis of program usage for appropriate use

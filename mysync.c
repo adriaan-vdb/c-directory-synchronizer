@@ -79,7 +79,7 @@ char *concat_strings(const char *str1, const char *str2)
 }
 
 // Follows the instructions in sync_files[], to sync the directories
-void synchronise_directories(HASHTABLE *sync_files)
+void synchronise_directories()
 {
     if (sync_files == NULL)
     {
@@ -161,9 +161,11 @@ void synchronise_directories(HASHTABLE *sync_files)
 
                 if (flags.p)
                 {
+                    // Maintains file permissions
                     mode_t new_mode = current->file.permissions;
                     chmod(destination, new_mode);
 
+                    // Maintains modification time
                     struct utimbuf new_times;
                     new_times.modtime = current->file.mtime;
                     utime(destination, &new_times);
@@ -191,9 +193,11 @@ void synchronise_directories(HASHTABLE *sync_files)
 
                 if (flags.p)
                 {
+                    // Maintains file permissions
                     mode_t new_mode = current->file.permissions;
                     chmod(destination, new_mode);
 
+                    // Maintains modification time
                     struct utimbuf new_times;
                     new_times.modtime = current->file.mtime;
                     utime(destination, &new_times);
@@ -204,19 +208,19 @@ void synchronise_directories(HASHTABLE *sync_files)
                         printf("  - REVERTING PERMISSIONS: %o\n", new_mode);
                     }
                 }
-
-                // why does this have to be a different operation, seems to have the same functionality to me
             }
-            current = current->next;
+            current = current->next; // Sets pointer to next instruction
         }
     }
 }
 
+// Checks if a filename matches with any of the globs in a list of strings
 bool in_list(char *filename, LIST *patterns)
 {
+    // Iterates through all the patterns in a given list
     while (patterns != NULL)
     {
-        // do stuff
+        // Converts the pattern (which may be a glob) into a regex pattern
         char *globpattern = patterns->string;
         char *regexpattern = glob2regex(globpattern);
         if (regexpattern)
@@ -227,39 +231,26 @@ bool in_list(char *filename, LIST *patterns)
             {
                 perror("Couldn't compute regcomp of glob pattern");
             }
+
+            // Check if the given filename matches with the current pattern being inspected
             if (regexec(&regex, filename, 0, NULL, 0) == 0)
             {
-                if (flags.v)
-                {
-                    printf("IGNORING: %s", filename);
-                }
                 return true;
             }
             regfree(&regex);
         }
         free(regexpattern);
-        patterns = patterns->next;
+        patterns = patterns->next; // Set pointer to point to the next pattern
     }
     return false;
 }
 
+// Scans each directory and stores files in a hashtable
 void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
 {
-
+    // Attempts to open the directory
     DIR *dir;
     struct dirent *entry;
-
-    // ------- If we wanted to get the full directory path:
-    // char cwd[MAXPATHLEN];
-    // if (getcwd(cwd, sizeof(cwd)) == NULL) {
-    //     perror("Unable to get current working directory");
-    //     exit(EXIT_FAILURE);
-    // }
-    // char fullpath[MAXPATHLEN];
-    // sprintf(fullpath, "%s/%s", cwd, dirname);
-
-    // printf("Directory Path: %s\n", fullpath);
-    // --------
 
     dir = opendir(dirname);
     if (dir == NULL)
@@ -268,17 +259,21 @@ void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         exit(EXIT_FAILURE);
     }
 
+    // Iteratively reads each entry (file or subdirectory) within the directory
     while ((entry = readdir(dir)) != NULL)
     {
-        struct stat fileStat;
+        struct stat fileStat; // Used to record the info on an entry
 
-        // Check if current entry is a file or directory (note that d_type doesn't work on windows)
+        // Stores the path of the entry
         char *path = malloc(sizeof(char) * (strlen(dirname) + 1 + strlen(entry->d_name) + 1));
         CHECK_ALLOC(path);
         sprintf(path, "%s/%s", dirname, entry->d_name);
+
+        // Gets the info/statistics of the entry
         stat(path, &fileStat);
-        if (S_ISDIR(fileStat.st_mode)) // Current item is sub-directory
+        if (S_ISDIR(fileStat.st_mode)) // Current entry is a sub-directory
         {
+            // Skips . and .. subdirectories
             if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
             {
                 if (flags->v)
@@ -287,15 +282,16 @@ void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
                 }
                 continue;
             }
-            if (flags->v)
+
+            if (flags->v && flags->r)
             {
                 printf(" -- recursively scanning subdirectory: '%s'\n", entry->d_name);
             }
 
-            // printf("\t");
-
+            // Calls process_directory on subdirectory (recursively processes file structure) where -r is present
             if (flags->r)
             {
+                // Checks if the subdirectory exists directly under the top-level directory
                 if (rootdirectoryname == NULL)
                 {
                     process_directory(concat_strings(dirname, concat_strings("/", entry->d_name)), flags, dirname);
@@ -306,35 +302,39 @@ void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
                 }
             }
         }
-        else // Current item is a file
+        else // Current entry is a file
         {
-            // Check if -a flag present
+            // Checks the conditions for which a file should be ignored
+            // 1. If -a flag absent and file begins with a "."
             if (!flags->a && entry->d_name[0] == '.')
             {
-                printf("- Skipping (no tag a): '%s' \n", entry->d_name);
+                if (flags->v)
+                {
+                    printf("- Skipping (no tag a): '%s' \n", entry->d_name);
+                }
                 continue;
             }
+            // 2. If -i and -o are present and the file matches a -i pattern
             else if (flags->o && flags->i && in_list(entry->d_name, flags->i_patterns))
             {
-                // continue (skip iteration) if file is in ignore list at all
                 if (flags->v)
                 {
                     printf("- Skipping (in ignore list): '%s'\n", entry->d_name);
                 }
                 continue;
             }
+            // 3. If -i is present and the file matches a -i pattern
             else if (flags->i && in_list(entry->d_name, flags->i_patterns))
             {
-                // continue (skip iteration) if file is in the ignore list
                 if (flags->v)
                 {
                     printf("- Skipping (in ignore list): '%s'\n", entry->d_name);
                 }
                 continue;
             }
+            // 4. If -o is present, and the file doesn't match a -o pattern
             else if (flags->o && !in_list(entry->d_name, flags->o_patterns))
             {
-                // continue (skip iteration) if file not in the only list
                 if (flags->v)
                 {
                     printf("- Skipping (not in only list): '%s'\n", entry->d_name);
@@ -343,6 +343,8 @@ void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
             }
 
             FILES newfile;
+
+            // Sets the pathname (relative to the top-level directory) and the directory name of the file
             if (rootdirectoryname == NULL)
             {
                 newfile.directory = (char *)dirname;
@@ -353,44 +355,42 @@ void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
                 newfile.directory = (char *)rootdirectoryname;
                 newfile.pathname = path + strlen(rootdirectoryname) + 1;
             }
+
+            // Records the permissions, modification time and name of the file
             newfile.permissions = fileStat.st_mode;
             newfile.mtime = fileStat.st_mtime;
             newfile.name = strdup(entry->d_name);
 
-            hashtable_add(files, newfile);
-            // if (rootdirectoryname == NULL)
-            // {
-            //     printf("FILE: %s\n", hashtable_view(files, path + strlen(dirname) + 1)->file.name);
-            // }
-            // else
-            // {
-            //     printf("FILE: %s\n", hashtable_view(files, path + strlen(rootdirectoryname) + 1)->file.name);
-            // }
+            hashtable_add(files, newfile); // Adds the information into the hashtable
         }
-        // free(path); // check this out
     }
 
     closedir(dir);
 }
 
+// Processes the hashtable into instructions for syncing
 void analyse_files()
 {
     if (flags.v)
     {
         printf("\n----------- FILE ANALYSIS COMMENCING -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?
     }
-    sync_files = calloc(ndirectories, sizeof(FILELIST *)); // creates array with a linked list of files for each directory
+
+    // Initialises the sync_files array -> which will be used to store the instructions for each directory
+    sync_files = calloc(ndirectories, sizeof(FILELIST *));
     for (int i = 0; i < HASHTABLE_SIZE; i++)
     {
         // For each "row" in the hashtable, view the row and account for any hashtable encoding collisions
         if (files[i] != NULL) // Current hashtable row contains files (isn't empty)
         {
             FILELIST *entry = files[i];
-            while (entry != NULL) // Analyse each file collision (e.g. all files with relative path Folder1/File1)
+            while (entry != NULL) // Analyse each file with the same relative path (e.g. all files with relative path Folder1/File1)
             {
+                // Account for collisions (infinite relative paths, finite rows on hashtable) - store the current relative path we are inspecting
                 char *relative_location = malloc(sizeof(char) * strlen(entry->file.pathname));
                 relative_location = entry->file.pathname;
-                FILELIST *analysis = NULL;
+
+                FILELIST *analysis = NULL; // List used to store the files with the current relative path
                 int analysis_index = 0;
                 while (entry != NULL && strcmp(relative_location, entry->file.pathname) == 0) // Store entries with same relative path together
                 {
@@ -408,6 +408,7 @@ void analyse_files()
                     {
                         printf("FILE to be created: %s\n", (char *)relative_location);
                     }
+                    // Adds sync instructions to each directory
                     for (int j = 0; j < ndirectories; j++)
                     {
                         if (sync_index(analysis[0].file) == j)
@@ -437,11 +438,12 @@ void analyse_files()
                             latest_index = j;
                         }
                     }
+                    // Adds sync instructions to each directory
                     for (int j = 0; j < ndirectories; j++)
                     {
                         if (sync_index(analysis[latest_index].file) == j)
                             continue; // Doesn't add anything instruction to directory containing the up to date file
-                        // Check if the directory is having if a previous version of the file exists in the current directory
+                        // Check if a previous version of the file exists in the current directory
                         bool new = true;
                         for (int x = 0; x < analysis_index; x++)
                         {
@@ -457,15 +459,12 @@ void analyse_files()
                         sync_files[j] = new_file;
                     }
                 }
-                else
-                {
-                    perror("No files to analyse within current hashtable entry");
-                }
             }
         }
     }
 }
 
+// Creates a list of the provided directories (used to help organise sync_files[] instruction array)
 void create_directory_list(int optind, char **argv)
 {
     // Computes the maximum length of the given directory names
@@ -477,6 +476,7 @@ void create_directory_list(int optind, char **argv)
             max_length = strlen(argv[i + optind]);
         }
     }
+    // Allocates an appropriately-sized array to store the directory names
     directories = calloc(ndirectories, sizeof(char) * (max_length + 1));
     for (int i = 0; i < ndirectories; i++)
     {
@@ -486,14 +486,13 @@ void create_directory_list(int optind, char **argv)
 
 int main(int argc, char **argv)
 {
-    // Check and evalute command line options
-
     int opt;
 
     // Initialise -i and -o lists
     flags.i_patterns = list_new();
     flags.o_patterns = list_new();
 
+    // Check and evalute command line options
     while ((opt = getopt(argc, argv, OPTLIST)) != -1)
     {
         switch (opt)
@@ -504,17 +503,16 @@ int main(int argc, char **argv)
         case 'i':
             flags.i = true;
             flags.i_patterns = list_add(flags.i_patterns, optarg);
-            // need to evaluate given pattern/s
             break;
         case 'n':
             flags.n = true;
+            // NOTE: lack of "break" statement, causes -v to automatically be enabled
         case 'v':
             flags.v = true;
             break;
         case 'o':
             flags.o = true;
             flags.o_patterns = list_add(flags.o_patterns, optarg);
-            // need to evaluate given pattern/s
             break;
         case 'p':
             flags.p = true;
@@ -527,7 +525,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (argc - optind + 1 < 3) // If less than 2 directories are named
+    if (argc - optind + 1 < 3) // If less than 2 directories are named will produce an error
     {
         usage();
         perror("Less than 2 directories are named.");
@@ -536,11 +534,13 @@ int main(int argc, char **argv)
 
     if (flags.v)
     {
-        printf("\n----------- SCAN COMMENCING -----------\n"); // printf("Directory: %d", 1); // How to work with Sub Directories?
+        printf("\n----------- SCAN COMMENCING -----------\n");
     }
 
+    // Initialises hashtable
     files = hashtable_new();
 
+    // Processes each directory
     ndirectories = 0;
     for (int i = optind; i < argc; i++)
     {
@@ -557,19 +557,8 @@ int main(int argc, char **argv)
     // Check and evaluate given directories
     analyse_files();
 
-    // print sync_files array -> for debugging purposes
-    // printf("\n ------ PRINTING SYNC_FILES DEBUG ------\n");
-    // for (int i = 0; i < ndirectories; i++)
-    // {
-    //     FILELIST *temp = sync_files[i];
-    //     while (temp != NULL)
-    //     {
-    //         printf("%s needs %s from %s\n", directories[i], temp->file.pathname, temp->file.directory);
-    //         temp = temp->next;
-    //     }
-    // }
-
-    synchronise_directories(sync_files);
+    // Carry out sync instructions
+    synchronise_directories();
 
     exit(EXIT_SUCCESS);
 }
