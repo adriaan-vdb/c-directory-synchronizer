@@ -384,20 +384,49 @@ void analyse_files()
         if (files[i] != NULL) // Current hashtable row contains files (isn't empty)
         {
             FILELIST *entry = files[i];
-            while (entry != NULL) // Analyse each file with the same relative path (e.g. all files with relative path Folder1/File1)
+            int discovered = 0;  // Counts the number of files that have been discovered in a particular row
+            int total_files = 0; // Stores the total number of files in the hashtable row
+            // Sets total_files to the total number of files in the hashtable
+            FILELIST *temp = entry;
+            while (temp != NULL)
             {
-                // Account for collisions (infinite relative paths, finite rows on hashtable) - store the current relative path we are inspecting
+                temp = temp->next;
+                total_files++;
+            }
+
+            // Account for collisions (infinite relative paths, finite rows on hashtable)
+            LIST *discovered_paths = list_new(); // Stores relative path names that have been discovered so far
+
+            // Waits until all files (and relative path names) in the hashtable row have been discovered
+            while (discovered < total_files) // Analyse each file with the same relative path (e.g. all files with relative path Folder1/File1)
+            {
+
+                entry = files[i];
+                // Records the relative location of the current file
                 char *relative_location = malloc(sizeof(char) * strlen(entry->file.pathname));
                 relative_location = entry->file.pathname;
+                // Checks if the relative location has been already discovered - if so, move onto the next entry
+                while (list_find(discovered_paths, relative_location))
+                {
+                    entry = entry->next;
+                    // Records the relative location of the current file
+                    relative_location = malloc(sizeof(char) * strlen(entry->file.pathname));
+                    relative_location = entry->file.pathname;
+                }
 
                 FILELIST *analysis = NULL; // List used to store the files with the current relative path
                 int analysis_index = 0;
-                while (entry != NULL && strcmp(relative_location, entry->file.pathname) == 0) // Store entries with same relative path together
+                while (entry != NULL) // Store entries with same relative path together
                 {
-                    analysis = realloc(analysis, (analysis_index + 1) * sizeof(FILELIST));
-                    CHECK_ALLOC(analysis)
-                    analysis[analysis_index] = *entry;
-                    analysis_index++;
+                    // Collects all the files with the same relative path name together
+                    if (strcmp(relative_location, entry->file.pathname) == 0)
+                    {
+                        analysis = realloc(analysis, (analysis_index + 1) * sizeof(FILELIST));
+                        CHECK_ALLOC(analysis)
+                        analysis[analysis_index] = *entry;
+                        analysis_index++;
+                        discovered++;
+                    }
                     entry = entry->next;
                 }
                 // Analyse each entry - two cases
@@ -463,6 +492,7 @@ void analyse_files()
                         sync_files[j] = new_file;
                     }
                 }
+                discovered_paths = list_add(discovered_paths, relative_location);
             }
         }
     }
