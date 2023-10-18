@@ -232,7 +232,7 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         // Check if -a flag present
         if (!flags->a && entry->d_name[0] == '.')
         {
-            printf("- Skipping %s  (no tag a)\n", entry->d_name);
+            printf("- Skipping (no tag a): '%s' \n", entry->d_name);
             continue;
         }
 
