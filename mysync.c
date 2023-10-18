@@ -81,6 +81,7 @@ void DOTHETHING(HASHTABLE *sync_files)
 
         while (current != NULL)
         {
+            printf("\n");
             if (current->new)
             {
                 // Accounts for recursive cases
@@ -220,7 +221,7 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
     dir = opendir(dirname);
     if (dir == NULL)
     {
-        perror("Unable to open directory");
+        perror("Unable to open directory\n");
         exit(EXIT_FAILURE);
     }
 
@@ -231,6 +232,7 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         // Check if -a flag present
         if (!flags->a && entry->d_name[0] == '.')
         {
+            printf("- Skipping %s  (no tag a)\n", entry->d_name);
             continue;
         }
 
@@ -238,7 +240,7 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         {
             // continue (skip iteration) if file is in ignore list at all
             if (flags->v){
-                printf("Skipping (in ignore list): '%s'\n", entry->d_name);
+                printf("- Skipping (in ignore list): '%s'\n", entry->d_name);
             }
             continue;
         }
@@ -246,7 +248,7 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         {
             // continue (skip iteration) if file is in the ignore list
             if (flags->v){
-                printf("Skipping (in ignore list): '%s'\n", entry->d_name);
+                printf("- Skipping (in ignore list): '%s'\n", entry->d_name);
             }
             continue;
         }
@@ -254,7 +256,7 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         {
             // continue (skip iteration) if file not in the only list
             if (flags->v){
-                printf("Skipping (not in only list): '%s'\n", entry->d_name);
+                printf("- Skipping (not in only list): '%s'\n", entry->d_name);
             }
             continue;
         }
@@ -267,10 +269,10 @@ void processDirectory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
         if (S_ISDIR(fileStat.st_mode)) // Current item is sub-directory
         {
             if (flags->v){
-                printf("\trecursively scanning subdirectory: '%s'\n", entry->d_name);
+                printf(" -- recursively scanning subdirectory: '%s'\n", entry->d_name);
             }
 
-            printf("\t");
+            //printf("\t");
 
             if (flags->r)
             {
