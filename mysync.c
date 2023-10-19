@@ -14,7 +14,7 @@ HASHTABLE *sync_files; // An a array of lists of files, where each element in th
 // Provides synopsis of program usage for appropriate use
 void usage()
 {
-    printf("Usage:  ./mysync  [options]  directory1  directory2  [directory3  ...]\n");
+    printf("Usage:  ./mysync  [options: -a -n -p -r -v -i pattern -o pattern]  directory1  directory2  [directory3  ...]\n");
 }
 
 // Index of the directory of a file; used to organise sync_files[]
@@ -30,52 +30,6 @@ int sync_index(FILES file)
     }
     fprintf(stderr, "Directory '%s' could not be found in list of given directories \n", file.directory);
     exit(EXIT_FAILURE);
-}
-
-// Copies a file from one path to another
-void copy_files(char *sourceFilePath, char *destFilePath)
-{
-    // Attempts to open the source file
-    FILE *sourceFile = fopen(sourceFilePath, "rb");
-    if (sourceFile == NULL)
-    {
-        perror("Error opening source file");
-        exit(EXIT_FAILURE);
-    }
-
-    // Attempts to open the destination file
-    FILE *destinationFile = fopen(destFilePath, "wb");
-    if (destinationFile == NULL)
-    {
-        perror("Error opening destination file");
-        fclose(sourceFile);
-        exit(EXIT_FAILURE);
-    }
-
-    char buffer[4096]; // Stores each line to be copied to new file
-    size_t bytesRead;  // Stores number of bytes read
-
-    // Iteratively copies each line of source file to destination file
-    while ((bytesRead = fread(buffer, 1, sizeof(buffer), sourceFile)) > 0)
-    {
-        fwrite(buffer, 1, bytesRead, destinationFile);
-    }
-
-    fclose(sourceFile);
-    fclose(destinationFile);
-}
-
-// Concatenates str1+str2 and returns the string
-char *concat_strings(const char *str1, const char *str2)
-{
-    // Calculates and allocates appropriate amount of memory for concatenated string
-    int totalLength = strlen(str1) + strlen(str2) + 1;
-    char *result = (char *)malloc(totalLength * sizeof(char));
-
-    // Performs and returns concatenation (this allows concatenation to be chained)
-    strcpy(result, str1);
-    strcat(result, str2);
-    return result;
 }
 
 // Follows the instructions in sync_files[], to sync the directories
@@ -216,37 +170,6 @@ void synchronise_directories()
     }
 }
 
-// Checks if a filename matches with any of the globs in a list of strings
-bool in_list(char *filename, LIST *patterns)
-{
-    // Iterates through all the patterns in a given list
-    while (patterns != NULL)
-    {
-        // Converts the pattern (which may be a glob) into a regex pattern
-        char *globpattern = patterns->string;
-        char *regexpattern = glob2regex(globpattern);
-        if (regexpattern)
-        {
-            regex_t regex;
-            int err = regcomp(&regex, regexpattern, 0);
-            if (err != 0)
-            {
-                perror("Couldn't compute regcomp of glob pattern");
-            }
-
-            // Check if the given filename matches with the current pattern being inspected
-            if (regexec(&regex, filename, 0, NULL, 0) == 0)
-            {
-                return true;
-            }
-            regfree(&regex);
-        }
-        free(regexpattern);
-        patterns = patterns->next; // Set pointer to point to the next pattern
-    }
-    return false;
-}
-
 // Scans each directory and stores files in a hashtable
 void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
 {
@@ -257,7 +180,7 @@ void process_directory(char *dirname, OPTIONS *flags, char *rootdirectoryname)
     dir = opendir(dirname);
     if (dir == NULL)
     {
-        perror("Unable to open directory\n");
+        fprintf(stderr, "Unable to open directory '%s' : %s\n", dirname, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -520,6 +443,45 @@ void create_directory_list(int optind, char **argv)
     }
 }
 
+void start_mysync(int optind, int argc, char **argv)
+{
+    if (flags.v)
+    {
+        printf("\n----------- SCAN COMMENCING -----------\n");
+    }
+
+    // Initialises hashtable
+    files = hashtable_new();
+
+    // Processes each directory
+    ndirectories = 0;
+    for (int i = optind; i < argc; i++)
+    {
+        if (flags.v)
+        {
+            printf("\nscanning toplevel: '%s'\n", argv[i]);
+        }
+        process_directory(argv[i], &flags, NULL);
+        ndirectories++;
+    }
+
+    create_directory_list(optind, argv);
+
+    // Check and evaluate given directories
+    analyse_files();
+
+    if (flags.v && flags.p)
+    {
+        printf("\nFiles to have original file permissions and modification times\n");
+    }
+
+    // Carry out sync instructions
+    if (!flags.n)
+    {
+        synchronise_directories();
+    }
+}
+
 int main(int argc, char **argv)
 {
     int opt;
@@ -557,47 +519,20 @@ int main(int argc, char **argv)
             flags.r = true;
             break;
         default:
-            perror("Invalid option provided");
+            fprintf(stderr, "Invalid option provided \n");
+            usage();
+            exit(EXIT_FAILURE);
         }
     }
 
     if (argc - optind + 1 < 3) // If less than 2 directories are named will produce an error
     {
+        fprintf(stderr, "Less than 2 directories are named \n");
         usage();
-        perror("Less than 2 directories are named.");
         exit(EXIT_FAILURE);
     }
 
-    if (flags.v)
-    {
-        printf("\n----------- SCAN COMMENCING -----------\n");
-    }
-
-    // Initialises hashtable
-    files = hashtable_new();
-
-    // Processes each directory
-    ndirectories = 0;
-    for (int i = optind; i < argc; i++)
-    {
-        if (flags.v)
-        {
-            printf("\nscanning toplevel: '%s'\n", argv[i]);
-        }
-        process_directory(argv[i], &flags, NULL);
-        ndirectories++;
-    }
-
-    create_directory_list(optind, argv);
-
-    // Check and evaluate given directories
-    analyse_files();
-
-    // Carry out sync instructions
-    if (!flags.n)
-    {
-        synchronise_directories();
-    }
+    start_mysync(optind, argc, argv);
 
     exit(EXIT_SUCCESS);
 }

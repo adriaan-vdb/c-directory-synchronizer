@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <utime.h>
 #include <regex.h>
+#include <errno.h>
 
 #define HASHTABLE_SIZE 997  // Size of the hashtable used to store files
 #define OPTLIST "ai:no:prv" // Valid options provided to the program

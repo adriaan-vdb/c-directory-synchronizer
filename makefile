@@ -1,6 +1,6 @@
 PROJECT =  mysync
 HEADERS =  $(PROJECT).h
-OBJ     =  mysync.o List.o hashtable.o glob2regex.o
+OBJ     =  mysync.o List.o hashtable.o glob2regex.o utilities.o
 
 
 C11     =  gcc -std=c11
