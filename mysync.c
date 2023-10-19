@@ -408,7 +408,7 @@ void analyse_files()
                         }
                         else if (flags.v)
                         {
-                            printf("FILE to be udpated: %s in %s\n", (char *)relative_location, directories[j]);
+                            printf("FILE to be updated: %s in %s\n", (char *)relative_location, directories[j]);
                         }
                         FILELIST *new_file = malloc(sizeof(FILELIST));
                         new_file->file = analysis[latest_index].file;
